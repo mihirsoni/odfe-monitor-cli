@@ -18,6 +18,21 @@ var (
 	user string
 )
 
+// Search hello
+type Search struct {
+	Search struct {
+		Indices []string               `json:"indices"`
+		Query   map[string]interface{} `json:"query"`
+	} `json:"search"`
+}
+
+type Triggers struct {
+	Name      string     `json:"name"`
+	Severity  string     `json:"severity"`
+	Condition Condition  `json:"condition"`
+	Actions   *[]Actions `json:"actions,omitempty"`
+}
+
 // Period hello
 type Period struct {
 	Interval int    `json:"interval"`
@@ -35,13 +50,26 @@ type Schedule struct {
 	Period *Period `json:"period,omitempty"`
 	Cron   *Cron   `json:"cron,omitempty"`
 }
+type Actions struct {
+}
+
+type Script struct {
+	Source string `json:"source"`
+	Lang   string `json:"lang"`
+}
+type Condition struct {
+	Script Script `json:"script"`
+}
 
 // Monitor nice
 type Monitor struct {
-	Name     string   `json:"name"`
-	Type     string   `json:"type"`
-	Enabled  bool     `json:"enabled"`
-	Schedule Schedule `json:"schedule"`
+	ID       string     `json:"id,omitempty"`
+	Name     string     `json:"name"`
+	Type     string     `json:"type"`
+	Enabled  bool       `json:"enabled"`
+	Schedule Schedule   `json:"schedule"`
+	Inputs   []Search   `json:"inputs"`
+	Triggers []Triggers `json:"triggers"`
 }
 
 func (monitor *Monitor) getMonitor() *Monitor {
@@ -52,63 +80,78 @@ func (monitor *Monitor) getMonitor() *Monitor {
 	}
 	err = yaml.Unmarshal(yamlFile, &monitor)
 	if err != nil {
-		fmt.Println("Unable to parse the yml file", err)
+		fmt.Println("Unable to parse the yml file asda", err)
 		os.Exit(1)
 	}
 	return monitor
 }
 func main() {
-	// flag.Parse()
-	// if flag.NFlag() == 0 {
-	// 	fmt.Printf("Usage: %s [options] \n", os.Args[0])
-	// 	fmt.Println("options")
-	// 	flag.PrintDefaults()
-	// 	os.Exit(1)
-	// }
-	// monitor := &Monitor{
-	// 	Name:    "Test",
-	// 	Type:    "monitor",
-	// 	Enabled: true,
-	// 	Schedule: Schedule{
-	// 		Period: Period{
-	// 			Interval: 1,
-	// 			Unit:     "Min",
-	// 		},
-	// 	},
-	// }
-	var monitor Monitor
-	monitor.getMonitor()
-	jso, _ := json.Marshal(monitor)
-	fmt.Println("monitor is ", string(jso))
 
-	allMonitors := getRemoteMonitors()
+	localMonitors := getLocalMonitors()
+	allRemoteMonitors := getRemoteMonitors()
 
-	localYaml, err := yaml.Marshal(&monitor)
-	remoteYml, err := yaml.Marshal(allMonitors[0])
+	localYaml, err := yaml.Marshal(localMonitors["Mihir"])
+	remoteYml, err := yaml.Marshal(allRemoteMonitors["Mihir"])
 	if err != nil {
 		fmt.Printf("Unable to convert into YML")
 		os.Exit(1)
 	}
-	//Test end
 	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(string(localYaml), string(remoteYml), true)
-	fmt.Println(len(diffs))
-	fmt.Println(dmp.DiffPrettyText(diffs))
-	fmt.Println(len(allMonitors))
-}
+	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), true)
 
+	fmt.Println(dmp.DiffPrettyText(diffs))
+	runMonitor(allRemoteMonitors["Mihir"].ID, localMonitors["Mihir"])
+	updateMonitor(allRemoteMonitors["Mihir"].ID, localMonitors["Mihir"])
+	// fmt.Println(len(allRemoteMonitors))
+}
+func checkUniqueMonitorNames(monitors []Monitor) bool {
+	count := make(map[string]int)
+	for _, monitor := range monitors {
+		if count[monitor.Name] > 0 {
+			fmt.Println("Duplicate name exisits all monitor name should be unique")
+			os.Exit(1)
+		}
+		count[monitor.Name] = 1
+	}
+	return true
+}
 func init() {
 	flag.StringVarP(&user, "user", "u", "", "Search Users")
 }
+func diff() {
+	//All New
+	// Modified
+	//
+}
+func getLocalMonitors() map[string]Monitor {
+	var allLocalMonitorsMap map[string]Monitor
+	var allLocalMonitors []Monitor
+	yamlFile, err := ioutil.ReadFile("monitor.yml")
+	if err != nil {
+		fmt.Println("Unable to parse monitor file", err)
+		os.Exit(1)
+	}
+	yaml.Unmarshal(yamlFile, &allLocalMonitors)
+	if err != nil {
+		fmt.Println("Unable to parse the yml file", err)
+		os.Exit(1)
+	}
+	//Validate uniq name
+	checkUniqueMonitorNames(allLocalMonitors)
+	allLocalMonitorsMap = make(map[string]Monitor)
+	for _, localMonitor := range allLocalMonitors {
+		fmt.Println("localMonitor", localMonitor)
+		allLocalMonitorsMap[localMonitor.Name] = localMonitor
+	}
 
-func getLocalMonitors() []Monitor {
-	return nil
+	return allLocalMonitorsMap
 }
 
-func getRemoteMonitors() []Monitor {
+func getRemoteMonitors() map[string]Monitor {
 	var (
-		r           map[string]interface{}
-		allMonitors []Monitor
+		r                    map[string]interface{}
+		allMonitors          []Monitor
+		allRemoteMonitorsMap map[string]Monitor
 	)
 	byt := []byte(`{"query":{ "match_all": {}}}`)
 	resp, err := http.Post("http://localhost:9200/_opendistro/_alerting/monitors/_search", "application/json", bytes.NewBuffer(byt))
@@ -123,19 +166,69 @@ func getRemoteMonitors() []Monitor {
 	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		var monitor Monitor
 		mapstructure.Decode(hit.(map[string]interface{})["_source"], &monitor)
+		monitor.ID = hit.(map[string]interface{})["_id"].(string)
+		fmt.Printf("%+v\n", monitor)
+
 		allMonitors = append(allMonitors, monitor)
-		// tst, err := yaml.Marshal(&monitor)
-		// if err != nil {
-		// 	fmt.Printf("Unable to convert into YML")
-		// 	os.Exit(1)
-		// }
-		// fmt.Println(string(tst))
-		// fmt.Println(monitor.Schedule.Period.Unit)
 	}
-	// fmt.Println(len(allMonitors))
-	return allMonitors
+	allRemoteMonitorsMap = make(map[string]Monitor)
+	for _, remoteMonitor := range allMonitors {
+		allRemoteMonitorsMap[remoteMonitor.Name] = remoteMonitor
+	}
+	return allRemoteMonitorsMap
 }
 
-func getLocalMonitors() {
+// TODO , check if the query is incorrect
+func runMonitor(id string, monitor Monitor) bool {
+	var r map[string]interface{}
+	requestBody, err := json.Marshal(monitor)
+	resp, err := http.Post("http://localhost:9200/_opendistro/_alerting/monitors/_execute?dryrun=true", "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		fmt.Println("Error retriving all the monitors", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+	json.NewDecoder(resp.Body).Decode(&r)
 
+	res := r["trigger_results"].(map[string]interface{})
+	executionResult, err := json.Marshal(res)
+	var t interface{}
+	err = json.Unmarshal(executionResult, &t)
+	itemsMap := t.(map[string]interface{})
+	for _, v := range itemsMap {
+		var val map[string]interface{}
+		asd, err := json.Marshal(v)
+		if err != nil {
+			fmt.Println("unabled to find the properyy ")
+			os.Exit(1)
+		}
+		json.Unmarshal(asd, &val)
+		if val["error"] != nil {
+			fmt.Println("Unable to run the monitor", val["error"])
+			os.Exit(1)
+		}
+	}
+	return true
+}
+
+func updateMonitor(id string, monitor Monitor) {
+	var r map[string]interface{}
+	client := http.Client{}
+	a, err := json.Marshal(monitor)
+	if err != nil {
+		fmt.Println("Unable to parse monitor Object")
+		os.Exit(1)
+	}
+	fmt.Println("Id is", id)
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:9200/_opendistro/_alerting/monitors/"+id, bytes.NewBuffer(a))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error retriving all the monitors", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	json.NewDecoder(resp.Body).Decode(&r)
+	fmt.Println(r)
 }
