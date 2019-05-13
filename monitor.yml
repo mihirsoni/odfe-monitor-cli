@@ -1,0 +1,68 @@
+- name: 'Mihi'
+  type: 'monitor'
+  schedule:
+    period:
+      interval: 1
+      unit: 'MINUTES'
+  enabled: true
+  inputs:
+    - search:
+        indices: ["hello*"]
+        query: {}
+  triggers:
+    - name: 'Hello'
+      severity: 'World'
+      condition:
+        script:
+          source : 'return false'
+          lang: 'painless'
+    - name: 'World'
+      severity: 'Hello'
+      condition:
+        script:
+          source : 'return false'
+          lang: 'painless'
+- name: 'Mihir'
+  type: 'monitor'
+  schedule:
+    period:
+      interval: 10
+      unit: 'MINUTES'
+  enabled: true
+  inputs:
+    - search:
+        indices: ["hello*"]
+        query:
+          sizedd : 0
+          query:
+            match_all: {}
+  triggers:
+    - name: 'Hello'
+      severity: '1'
+      condition:
+        script:
+          source : 'return true'
+          lang: 'painless'
+
+- name: 'Mihirs'
+  type: 'monitor'
+  schedule:
+    period:
+      interval: 10
+      unit: 'MINUTES'
+  enabled: true
+  inputs:
+    - search:
+        indices: ["hello*"]
+        query:
+          sizedd : 0
+          query:
+            match_all: {}
+  triggers:
+    - name: 'Hello'
+      severity: '1'
+      condition:
+        script:
+          source : 'return true'
+          lang: 'painless'
+
