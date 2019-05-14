@@ -86,21 +86,13 @@ type Monitor struct {
 	Triggers []Trigger `json:"triggers"`
 }
 
-func (monitor *Monitor) getMonitor() *Monitor {
-	yamlFile, err := ioutil.ReadFile("monitor.yml")
-	if err != nil {
-		fmt.Println("Unable to parse monitor file", err)
-		os.Exit(1)
-	}
-	err = yaml.Unmarshal(yamlFile, &monitor)
-	if err != nil {
-		fmt.Println("Unable to parse the yml file asda", err)
-		os.Exit(1)
-	}
-	return monitor
+type Config struct {
+	Destinations map[string]interface{}
 }
-func main() {
 
+var globalConfig = getConfigYml()
+
+func main() {
 	localMonitors := getLocalMonitors()
 	allRemoteMonitors := getRemoteMonitors()
 
@@ -114,10 +106,40 @@ func main() {
 	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), true)
 
 	fmt.Println(dmp.DiffPrettyText(diffs))
-	runMonitor(allRemoteMonitors["Mihir"].ID, localMonitors["Mihir"])
-	updateMonitor(allRemoteMonitors["Mihir"], localMonitors["Mihir"])
+	canonicalMonitor := prepareMonitor(localMonitors["Mihir"], allRemoteMonitors["Mihir"])
+	runMonitor(allRemoteMonitors["Mihir"].ID, canonicalMonitor)
+	updateMonitor(allRemoteMonitors["Mihir"], canonicalMonitor)
 	// fmt.Println(len(allRemoteMonitors))
 }
+
+func (monitor *Monitor) getMonitor() *Monitor {
+	yamlFile, err := ioutil.ReadFile("monitor.yml")
+	if err != nil {
+		fmt.Println("Unable to parse monitor file", err)
+		os.Exit(1)
+	}
+	err = yaml.Unmarshal(yamlFile, &monitor)
+	if err != nil {
+		fmt.Println("Unable to parse the yml file asda", err)
+		os.Exit(1)
+	}
+	return monitor
+}
+func getConfigYml() Config {
+	var globalConfig Config
+	yamlFile, err := ioutil.ReadFile("config.yml")
+	if err != nil {
+		fmt.Println("Unable to parse monitor file", err)
+		os.Exit(1)
+	}
+	yaml.Unmarshal(yamlFile, &globalConfig)
+	if err != nil {
+		fmt.Println("Unable to parse the yml file", err)
+		os.Exit(1)
+	}
+	return globalConfig
+}
+
 func checkUniqueMonitorNames(monitors []Monitor) bool {
 	count := make(map[string]int)
 	for _, monitor := range monitors {
@@ -129,14 +151,17 @@ func checkUniqueMonitorNames(monitors []Monitor) bool {
 	}
 	return true
 }
+
 func init() {
 	flag.StringVarP(&user, "user", "u", "", "Search Users")
 }
+
 func diff() {
 	//All New
 	// Modified
 	//
 }
+
 func getLocalMonitors() map[string]Monitor {
 	var allLocalMonitorsMap map[string]Monitor
 	var allLocalMonitors []Monitor
@@ -154,13 +179,6 @@ func getLocalMonitors() map[string]Monitor {
 	checkUniqueMonitorNames(allLocalMonitors)
 	allLocalMonitorsMap = make(map[string]Monitor)
 	for _, localMonitor := range allLocalMonitors {
-		for _, trigger := range localMonitor.Triggers {
-			for k := range trigger.Actions {
-				fmt.Println("Mihir", trigger.Actions[k].Destination)
-				//TODO:: Actually read gloabl config
-				trigger.Actions[k].DestinationID = "yUC7mWoBPbC8nMZTXQPd"
-			}
-		}
 		allLocalMonitorsMap[localMonitor.Name] = localMonitor
 	}
 
@@ -196,6 +214,35 @@ func getRemoteMonitors() map[string]Monitor {
 		allRemoteMonitorsMap[remoteMonitor.Name] = remoteMonitor
 	}
 	return allRemoteMonitorsMap
+}
+
+func prepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
+	monitorToUpdate := localMonitor
+	//Inject triggerIds in case updating existing triggers
+	// Convert triggers to map
+	remoteTriggers := make(map[string]Trigger)
+	for _, remoteTrigger := range remoteMonitor.Triggers {
+		remoteTriggers[remoteTrigger.Name] = remoteTrigger
+	}
+	//Update trigger if already existed
+	// TODO::Same with Actions once released
+	for index := range monitorToUpdate.Triggers {
+		//Update trigger Id
+		if remoteTrigger, ok := remoteTriggers[monitorToUpdate.Triggers[index].Name]; ok {
+			monitorToUpdate.Triggers[index].ID = remoteTrigger.ID
+		}
+		// Update destinationId and actioinId
+		for k := range monitorToUpdate.Triggers[index].Actions {
+			//TODO:: Actually read gloabl config
+			destinationID := globalConfig.Destinations["my_chime"].(map[string]string)["id"]
+			if destinationID == "" {
+				fmt.Println("destination specified doesn't exist in config file, verify it")
+				os.Exit(1)
+			}
+			monitorToUpdate.Triggers[index].Actions[k].DestinationID = destinationID
+		}
+	}
+	return monitorToUpdate
 }
 
 // TODO , check if the query is incorrect
@@ -234,20 +281,6 @@ func runMonitor(id string, monitor Monitor) bool {
 
 func updateMonitor(remoteMonitor Monitor, monitor Monitor) {
 	id := remoteMonitor.ID
-	//Inject triggerIds in case updating existing triggers
-	// Convert triggers to map
-	remoteTriggers := make(map[string]Trigger)
-	for _, remoteTrigger := range remoteMonitor.Triggers {
-		remoteTriggers[remoteTrigger.Name] = remoteTrigger
-	}
-	//Update trigger if already existed
-	// TODO::Same with Actions once released
-	for index := range monitor.Triggers {
-		if remoteTrigger, ok := remoteTriggers[monitor.Triggers[index].Name]; ok {
-			monitor.Triggers[index].ID = remoteTrigger.ID
-		}
-	}
-
 	var r map[string]interface{}
 	client := http.Client{}
 	a, err := json.Marshal(monitor)

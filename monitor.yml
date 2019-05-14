@@ -17,14 +17,14 @@
       severity: '1'
       condition:
         script:
-          source : 'return true'
+          source : "return true"
           lang: 'painless'
       actions:
         - name: Test
-          destination: 'slack_abc'
+          destination: 'my_chime'
           subject_template:
             source: 'Hello'
             lang: 'mustache'
           message_template:
-            source: 'Now'
+            source: 'Hmmm updated message'
             lang: 'mustache'
