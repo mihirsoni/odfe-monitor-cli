@@ -76,7 +76,7 @@ type Condition struct {
 
 // Monitor nice
 type Monitor struct {
-	ID       string    `json:"id,omitempty"`
+	id       string
 	Name     string    `json:"name"`
 	Type     string    `json:"type"`
 	Enabled  bool      `json:"enabled"`
@@ -103,11 +103,12 @@ func main() {
 	}
 	fmt.Println("remoteYml", string(remoteYml))
 	dmp := diffmatchpatch.New()
+
 	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), false)
 
 	fmt.Println(dmp.DiffPrettyText(diffs))
 	canonicalMonitor := prepareMonitor(localMonitors["Mihir"], allRemoteMonitors["Mihir"])
-	runMonitor(allRemoteMonitors["Mihir"].ID, canonicalMonitor)
+	runMonitor(allRemoteMonitors["Mihir"].id, canonicalMonitor)
 	updateMonitor(allRemoteMonitors["Mihir"], canonicalMonitor)
 	// fmt.Println(len(allRemoteMonitors))
 }
@@ -209,7 +210,7 @@ func getRemoteMonitors() map[string]Monitor {
 			os.Exit(1)
 		}
 		json.Unmarshal(parsedMonitor, &monitor)
-		monitor.ID = hit.(map[string]interface{})["_id"].(string)
+		monitor.id = hit.(map[string]interface{})["_id"].(string)
 		fmt.Printf("%+v\n", monitor)
 
 		allMonitors = append(allMonitors, monitor)
@@ -286,7 +287,7 @@ func runMonitor(id string, monitor Monitor) bool {
 }
 
 func updateMonitor(remoteMonitor Monitor, monitor Monitor) {
-	id := remoteMonitor.ID
+	id := remoteMonitor.id
 	var r map[string]interface{}
 	client := http.Client{}
 	a, err := json.Marshal(monitor)
