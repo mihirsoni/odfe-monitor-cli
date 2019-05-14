@@ -27,6 +27,7 @@ type Search struct {
 }
 
 type Trigger struct {
+	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Severity  string    `json:"severity"`
 	Condition Condition `json:"condition"`
@@ -114,7 +115,7 @@ func main() {
 
 	fmt.Println(dmp.DiffPrettyText(diffs))
 	runMonitor(allRemoteMonitors["Mihir"].ID, localMonitors["Mihir"])
-	updateMonitor(allRemoteMonitors["Mihir"].ID, localMonitors["Mihir"])
+	updateMonitor(allRemoteMonitors["Mihir"], localMonitors["Mihir"])
 	// fmt.Println(len(allRemoteMonitors))
 }
 func checkUniqueMonitorNames(monitors []Monitor) bool {
@@ -231,7 +232,22 @@ func runMonitor(id string, monitor Monitor) bool {
 	return true
 }
 
-func updateMonitor(id string, monitor Monitor) {
+func updateMonitor(remoteMonitor Monitor, monitor Monitor) {
+	id := remoteMonitor.ID
+	//Inject triggerIds in case updating existing triggers
+	// Convert triggers to map
+	remoteTriggers := make(map[string]Trigger)
+	for _, remoteTrigger := range remoteMonitor.Triggers {
+		remoteTriggers[remoteTrigger.Name] = remoteTrigger
+	}
+	//Update trigger if already existed
+	// TODO::Same with Actions once released
+	for index := range monitor.Triggers {
+		if remoteTrigger, ok := remoteTriggers[monitor.Triggers[index].Name]; ok {
+			monitor.Triggers[index].ID = remoteTrigger.ID
+		}
+	}
+
 	var r map[string]interface{}
 	client := http.Client{}
 	a, err := json.Marshal(monitor)
@@ -239,7 +255,7 @@ func updateMonitor(id string, monitor Monitor) {
 		fmt.Println("Unable to parse monitor Object")
 		os.Exit(1)
 	}
-	fmt.Println("Id is", string(a))
+	fmt.Println("Updating existing monitor", string(a))
 	req, err := http.NewRequest(http.MethodPut, "http://localhost:9200/_opendistro/_alerting/monitors/"+id, bytes.NewBuffer(a))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
