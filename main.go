@@ -233,8 +233,7 @@ func prepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
 		}
 		// Update destinationId and actioinId
 		for k := range monitorToUpdate.Triggers[index].Actions {
-			//TODO:: Actually read gloabl config
-			destinationID := globalConfig.Destinations["my_chime"].(map[string]string)["id"]
+			destinationID := globalConfig.Destinations["my_chime"].(map[string]interface{})["id"].(string)
 			if destinationID == "" {
 				fmt.Println("destination specified doesn't exist in config file, verify it")
 				os.Exit(1)
