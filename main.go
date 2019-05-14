@@ -26,11 +26,11 @@ type Search struct {
 	} `json:"search"`
 }
 
-type Triggers struct {
-	Name      string     `json:"name"`
-	Severity  string     `json:"severity"`
-	Condition Condition  `json:"condition"`
-	Actions   *[]Actions `json:"actions,omitempty"`
+type Trigger struct {
+	Name      string    `json:"name"`
+	Severity  string    `json:"severity"`
+	Condition Condition `json:"condition"`
+	Actions   []Action  `json:"actions,omitempty"`
 }
 
 // Period hello
@@ -50,7 +50,20 @@ type Schedule struct {
 	Period *Period `json:"period,omitempty"`
 	Cron   *Cron   `json:"cron,omitempty"`
 }
-type Actions struct {
+
+//Action action model
+type Action struct {
+	Name            string `json:"name"`
+	Destination     string `json:"-"`
+	DestinationID   string `json:"destination_id,omitempty"`
+	SubjectTemplate struct {
+		Source string `json:"source"`
+		Lang   string `json:"lang"`
+	} `json:"subject_template"`
+	MessageTemplate struct {
+		Source string `json:"source"`
+		Lang   string `json:"lang"`
+	} `json:"message_template"`
 }
 
 type Script struct {
@@ -63,13 +76,13 @@ type Condition struct {
 
 // Monitor nice
 type Monitor struct {
-	ID       string     `json:"id,omitempty"`
-	Name     string     `json:"name"`
-	Type     string     `json:"type"`
-	Enabled  bool       `json:"enabled"`
-	Schedule Schedule   `json:"schedule"`
-	Inputs   []Search   `json:"inputs"`
-	Triggers []Triggers `json:"triggers"`
+	ID       string    `json:"id,omitempty"`
+	Name     string    `json:"name"`
+	Type     string    `json:"type"`
+	Enabled  bool      `json:"enabled"`
+	Schedule Schedule  `json:"schedule"`
+	Inputs   []Search  `json:"inputs"`
+	Triggers []Trigger `json:"triggers"`
 }
 
 func (monitor *Monitor) getMonitor() *Monitor {
@@ -108,7 +121,7 @@ func checkUniqueMonitorNames(monitors []Monitor) bool {
 	count := make(map[string]int)
 	for _, monitor := range monitors {
 		if count[monitor.Name] > 0 {
-			fmt.Println("Duplicate name exisits all monitor name should be unique")
+			fmt.Println("Duplicate name exists all monitor name should be unique")
 			os.Exit(1)
 		}
 		count[monitor.Name] = 1
@@ -140,7 +153,13 @@ func getLocalMonitors() map[string]Monitor {
 	checkUniqueMonitorNames(allLocalMonitors)
 	allLocalMonitorsMap = make(map[string]Monitor)
 	for _, localMonitor := range allLocalMonitors {
-		fmt.Println("localMonitor", localMonitor)
+		for _, trigger := range localMonitor.Triggers {
+			for k := range trigger.Actions {
+				fmt.Println("Mihir", trigger.Actions[k].Destination)
+				//TODO:: Actually read gloabl config
+				trigger.Actions[k].DestinationID = "yUC7mWoBPbC8nMZTXQPd"
+			}
+		}
 		allLocalMonitorsMap[localMonitor.Name] = localMonitor
 	}
 
@@ -182,6 +201,7 @@ func getRemoteMonitors() map[string]Monitor {
 func runMonitor(id string, monitor Monitor) bool {
 	var r map[string]interface{}
 	requestBody, err := json.Marshal(monitor)
+	fmt.Println("requestBody", string(requestBody))
 	resp, err := http.Post("http://localhost:9200/_opendistro/_alerting/monitors/_execute?dryrun=true", "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		fmt.Println("Error retriving all the monitors", err)
@@ -189,7 +209,7 @@ func runMonitor(id string, monitor Monitor) bool {
 	}
 	defer resp.Body.Close()
 	json.NewDecoder(resp.Body).Decode(&r)
-
+	fmt.Println("r", r)
 	res := r["trigger_results"].(map[string]interface{})
 	executionResult, err := json.Marshal(res)
 	var t interface{}
@@ -199,7 +219,7 @@ func runMonitor(id string, monitor Monitor) bool {
 		var val map[string]interface{}
 		asd, err := json.Marshal(v)
 		if err != nil {
-			fmt.Println("unabled to find the properyy ")
+			fmt.Println("unable to find the proper response ")
 			os.Exit(1)
 		}
 		json.Unmarshal(asd, &val)
@@ -219,7 +239,7 @@ func updateMonitor(id string, monitor Monitor) {
 		fmt.Println("Unable to parse monitor Object")
 		os.Exit(1)
 	}
-	fmt.Println("Id is", id)
+	fmt.Println("Id is", string(a))
 	req, err := http.NewRequest(http.MethodPut, "http://localhost:9200/_opendistro/_alerting/monitors/"+id, bytes.NewBuffer(a))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
