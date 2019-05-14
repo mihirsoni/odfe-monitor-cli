@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/ghodss/yaml"
-	"github.com/mitchellh/mapstructure"
 	flag "github.com/ogier/pflag"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
@@ -55,7 +54,7 @@ type Schedule struct {
 //Action action model
 type Action struct {
 	Name            string `json:"name"`
-	Destination     string `json:"-"`
+	Destination     string `json:"destination,omitempty"`
 	DestinationID   string `json:"destination_id,omitempty"`
 	SubjectTemplate struct {
 		Source string `json:"source"`
@@ -102,8 +101,9 @@ func main() {
 		fmt.Printf("Unable to convert into YML")
 		os.Exit(1)
 	}
+	fmt.Println("remoteYml", string(remoteYml))
 	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), true)
+	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), false)
 
 	fmt.Println(dmp.DiffPrettyText(diffs))
 	canonicalMonitor := prepareMonitor(localMonitors["Mihir"], allRemoteMonitors["Mihir"])
@@ -203,7 +203,12 @@ func getRemoteMonitors() map[string]Monitor {
 	// Print the ID and document source for each hit.
 	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		var monitor Monitor
-		mapstructure.Decode(hit.(map[string]interface{})["_source"], &monitor)
+		parsedMonitor, err := json.Marshal(hit.(map[string]interface{})["_source"])
+		if err != nil {
+			fmt.Println("invalid json in the monitor")
+			os.Exit(1)
+		}
+		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.ID = hit.(map[string]interface{})["_id"].(string)
 		fmt.Printf("%+v\n", monitor)
 
@@ -233,12 +238,14 @@ func prepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
 		}
 		// Update destinationId and actioinId
 		for k := range monitorToUpdate.Triggers[index].Actions {
-			destinationID := globalConfig.Destinations["my_chime"].(map[string]interface{})["id"].(string)
+			destinationID := globalConfig.Destinations[monitorToUpdate.Triggers[index].Actions[k].Destination].(map[string]interface{})["id"].(string)
 			if destinationID == "" {
 				fmt.Println("destination specified doesn't exist in config file, verify it")
 				os.Exit(1)
 			}
 			monitorToUpdate.Triggers[index].Actions[k].DestinationID = destinationID
+			//TODO:: Try to fix this with struct flags if possible
+			monitorToUpdate.Triggers[index].Actions[k].Destination = ""
 		}
 	}
 	return monitorToUpdate
