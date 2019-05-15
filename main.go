@@ -8,6 +8,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+
+	mapset "github.com/deckarep/golang-set"
 	"github.com/ghodss/yaml"
 	flag "github.com/ogier/pflag"
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -91,9 +95,11 @@ type Config struct {
 var globalConfig = getConfigYml()
 
 func main() {
-	localMonitors := getLocalMonitors()
-	allRemoteMonitors := getRemoteMonitors()
-
+	localMonitors, localMonitorSet := getLocalMonitors()
+	allRemoteMonitors, remoteMonitorsSet := getRemoteMonitors()
+	fmt.Println("All untracked monitor", remoteMonitorsSet.Difference(localMonitorSet))
+	fmt.Println("All new monitor", localMonitorSet.Difference(remoteMonitorsSet))
+	fmt.Println("All common monitors", remoteMonitorsSet.Intersect(localMonitorSet))
 	localYaml, err := yaml.Marshal(localMonitors["Mihir"])
 	remoteYml, err := yaml.Marshal(allRemoteMonitors["Mihir"])
 	if err != nil {
@@ -106,6 +112,8 @@ func main() {
 	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), false)
 
 	fmt.Println(dmp.DiffPrettyText(diffs))
+	diff := cmp.Diff(allRemoteMonitors["Mihir"], localMonitors["Mihir"], cmpopts.IgnoreUnexported(Monitor{}))
+	fmt.Println(string(diff))
 	canonicalMonitor := prepareMonitor(localMonitors["Mihir"], allRemoteMonitors["Mihir"])
 	runMonitor(allRemoteMonitors["Mihir"].id, canonicalMonitor)
 	updateMonitor(allRemoteMonitors["Mihir"], canonicalMonitor)
@@ -162,7 +170,7 @@ func diff() {
 	//
 }
 
-func getLocalMonitors() map[string]Monitor {
+func getLocalMonitors() (map[string]Monitor, mapset.Set) {
 	var allLocalMonitorsMap map[string]Monitor
 	var allLocalMonitors []Monitor
 	yamlFile, err := ioutil.ReadFile("monitor.yml")
@@ -177,12 +185,14 @@ func getLocalMonitors() map[string]Monitor {
 	}
 	//Validate uniq name
 	checkUniqueMonitorNames(allLocalMonitors)
+	localMonitorSet := mapset.NewSet()
 	allLocalMonitorsMap = make(map[string]Monitor)
 	for _, localMonitor := range allLocalMonitors {
+		localMonitorSet.Add(localMonitor.Name)
 		allLocalMonitorsMap[localMonitor.Name] = localMonitor
 	}
 
-	return allLocalMonitorsMap
+	return allLocalMonitorsMap, localMonitorSet
 }
 
 func reverseMap(m map[string]string) map[string]string {
@@ -193,7 +203,7 @@ func reverseMap(m map[string]string) map[string]string {
 	return n
 }
 
-func getRemoteMonitors() map[string]Monitor {
+func getRemoteMonitors() (map[string]Monitor, mapset.Set) {
 	var (
 		r                    map[string]interface{}
 		allMonitors          []Monitor
@@ -234,10 +244,12 @@ func getRemoteMonitors() map[string]Monitor {
 		allMonitors = append(allMonitors, monitor)
 	}
 	allRemoteMonitorsMap = make(map[string]Monitor)
+	remoteMonitorsSet := mapset.NewSet()
 	for _, remoteMonitor := range allMonitors {
+		remoteMonitorsSet.Add(remoteMonitor.Name)
 		allRemoteMonitorsMap[remoteMonitor.Name] = remoteMonitor
 	}
-	return allRemoteMonitorsMap
+	return allRemoteMonitorsMap, remoteMonitorsSet
 }
 
 func prepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
