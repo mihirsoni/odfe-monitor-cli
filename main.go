@@ -97,29 +97,45 @@ var globalConfig = getConfigYml()
 func main() {
 	localMonitors, localMonitorSet := getLocalMonitors()
 	allRemoteMonitors, remoteMonitorsSet := getRemoteMonitors()
-	fmt.Println("All untracked monitor", remoteMonitorsSet.Difference(localMonitorSet))
-	fmt.Println("All new monitor", localMonitorSet.Difference(remoteMonitorsSet))
-	fmt.Println("All common monitors", remoteMonitorsSet.Intersect(localMonitorSet))
-	localYaml, err := yaml.Marshal(localMonitors["Mihir"])
-	remoteYml, err := yaml.Marshal(allRemoteMonitors["Mihir"])
-	if err != nil {
-		fmt.Printf("Unable to convert into YML")
-		os.Exit(1)
+	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
+	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
+	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
+	fmt.Println("All un tracked monitor", unTrackedMonitors)
+	fmt.Println("All new monitor", allNewMonitors)
+	fmt.Println("All common monitors", allCommonMonitors)
+	changedMonitors := mapset.NewSet()
+	allCommonMonitorsIt := allCommonMonitors.Iterator()
+	for commonMonitor := range allCommonMonitorsIt.C {
+		if isMonitorChanged(localMonitors[commonMonitor.(string)], allRemoteMonitors[commonMonitor.(string)]) != true {
+			changedMonitors.Add(commonMonitor)
+		}
 	}
-	fmt.Println("remoteYml", string(remoteYml))
-	dmp := diffmatchpatch.New()
+	fmt.Println("monitors to be updated", changedMonitors)
+	for monitorToBeUpdated := range changedMonitors.Iterator().C {
+		monitorName := monitorToBeUpdated.(string)
+		localYaml, err := yaml.Marshal(localMonitors[monitorName])
+		remoteYml, err := yaml.Marshal(allRemoteMonitors[monitorName])
+		if err != nil {
+			fmt.Printf("Unable to convert into YML")
+			os.Exit(1)
+		}
+		fmt.Println("remoteYml", string(remoteYml))
+		dmp := diffmatchpatch.New()
 
-	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), false)
+		diffs := dmp.DiffMain(string(remoteYml), string(localYaml), false)
 
-	fmt.Println(dmp.DiffPrettyText(diffs))
-	diff := cmp.Diff(allRemoteMonitors["Mihir"], localMonitors["Mihir"], cmpopts.IgnoreUnexported(Monitor{}))
-	fmt.Println(string(diff))
-	canonicalMonitor := prepareMonitor(localMonitors["Mihir"], allRemoteMonitors["Mihir"])
-	runMonitor(allRemoteMonitors["Mihir"].id, canonicalMonitor)
-	updateMonitor(allRemoteMonitors["Mihir"], canonicalMonitor)
+		fmt.Println(dmp.DiffPrettyText(diffs))
+		diff := cmp.Diff(allRemoteMonitors[monitorName], localMonitors[monitorName], cmpopts.IgnoreUnexported(Monitor{}))
+		fmt.Println(string(diff))
+		canonicalMonitor := prepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName])
+		runMonitor(allRemoteMonitors[monitorName].id, canonicalMonitor)
+		updateMonitor(allRemoteMonitors[monitorName], canonicalMonitor)
+	}
 	// fmt.Println(len(allRemoteMonitors))
 }
-
+func isMonitorChanged(localMonitor Monitor, remoteMonitor Monitor) bool {
+	return cmp.Equal(localMonitor, remoteMonitor, cmpopts.IgnoreUnexported(Monitor{}))
+}
 func (monitor *Monitor) getMonitor() *Monitor {
 	yamlFile, err := ioutil.ReadFile("monitor.yml")
 	if err != nil {
