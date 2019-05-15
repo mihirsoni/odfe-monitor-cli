@@ -54,7 +54,6 @@ type Schedule struct {
 //Action action model
 type Action struct {
 	Name            string `json:"name"`
-	Destination     string `json:"destination,omitempty"`
 	DestinationID   string `json:"destination_id,omitempty"`
 	SubjectTemplate struct {
 		Source string `json:"source"`
@@ -86,7 +85,7 @@ type Monitor struct {
 }
 
 type Config struct {
-	Destinations map[string]interface{}
+	Destinations map[string]string
 }
 
 var globalConfig = getConfigYml()
@@ -186,6 +185,14 @@ func getLocalMonitors() map[string]Monitor {
 	return allLocalMonitorsMap
 }
 
+func reverseMap(m map[string]string) map[string]string {
+	n := make(map[string]string)
+	for k, v := range m {
+		n[v] = k
+	}
+	return n
+}
+
 func getRemoteMonitors() map[string]Monitor {
 	var (
 		r                    map[string]interface{}
@@ -211,8 +218,19 @@ func getRemoteMonitors() map[string]Monitor {
 		}
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
-		fmt.Printf("%+v\n", monitor)
+		flippedDestinations := reverseMap(globalConfig.Destinations)
 
+		for index := range monitor.Triggers {
+			// Update destinationId and actioinId
+			for k := range monitor.Triggers[index].Actions {
+				destintionName := flippedDestinations[monitor.Triggers[index].Actions[k].DestinationID]
+				if destintionName == "" {
+					fmt.Println("Looks like remote monitor selected destination doesn't exists here, please update config")
+					os.Exit(1)
+				}
+				monitor.Triggers[index].Actions[k].DestinationID = destintionName
+			}
+		}
 		allMonitors = append(allMonitors, monitor)
 	}
 	allRemoteMonitorsMap = make(map[string]Monitor)
@@ -239,14 +257,12 @@ func prepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
 		}
 		// Update destinationId and actioinId
 		for k := range monitorToUpdate.Triggers[index].Actions {
-			destinationID := globalConfig.Destinations[monitorToUpdate.Triggers[index].Actions[k].Destination].(map[string]interface{})["id"].(string)
+			destinationID := globalConfig.Destinations[monitorToUpdate.Triggers[index].Actions[k].DestinationID]
 			if destinationID == "" {
 				fmt.Println("destination specified doesn't exist in config file, verify it")
 				os.Exit(1)
 			}
 			monitorToUpdate.Triggers[index].Actions[k].DestinationID = destinationID
-			//TODO:: Try to fix this with struct flags if possible
-			monitorToUpdate.Triggers[index].Actions[k].Destination = ""
 		}
 	}
 	return monitorToUpdate

@@ -2,7 +2,7 @@
   type: 'monitor'
   schedule:
     period:
-      interval: 10
+      interval: 20
       unit: 'MINUTES'
   enabled: true
   inputs:
@@ -14,14 +14,14 @@
             match_all: {}
   triggers:
     - name: 'Hello'
-      severity: '1'
+      severity: '5'
       condition:
         script:
           source : "return true"
           lang: 'painless'
       actions:
         - name: Test
-          destination: 'my_chime'
+          destination_id: 'my_chime'
           subject_template:
             source: 'Hello'
             lang: 'mustache'
