@@ -9,9 +9,10 @@
     - search:
         indices: ["hello*"]
         query:
-          size: 10
           query:
-            match_all: {}
+            match_all: {
+              boost: 1.0
+            }
   triggers:
     - name: 'Hell3'
       severity: '5'
