@@ -1,13 +1,21 @@
 package commands
 
 import (
+	"fmt"
+	"os"
+
+	"../monitor"
 	"github.com/spf13/cobra"
 )
 
-var CfgFile string
 var Verbose bool
+var ESConfig monitor.ESConfig
 
-// RootCmd
+var esURL string
+var userName string
+var password string
+
+// RootCmd asd
 var RootCmd = &cobra.Command{
 	Use:   "This is the simple cli to use",
 	Short: "Short description",
@@ -19,7 +27,24 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.PersistentFlags().StringVar(&CfgFile, "config", "", "config file (default is $HOME/dagobah/config.yaml)")
-	RootCmd.PersistentFlags().String("es_url", "https://localhost:9200", "URL to connect to Elasticsearch")
-	RootCmd.PersistentFlags().Bool("versbose", false, "verbose debug")
+	cobra.OnInitialize(initEsConfig)
+	RootCmd.PersistentFlags().StringVarP(&esURL, "es-url", "e", "http://localhost:9200/", "URL to connect to Elasticsearch")
+	RootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "URL to connect to Elasticsearch")
+	RootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "URL to connect to Elasticsearch")
+	RootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+}
+
+func initEsConfig() {
+	if esURL != "" && userName != "" && password != "" {
+		//Validate URL
+		if IsUrl(esURL) {
+			// Validate ES is running?
+			ESConfig = monitor.ESConfig{URL: esURL, Username: userName, Password: password}
+		} else {
+			fmt.Println("Invalid URL")
+			os.Exit(1)
+		}
+	} else {
+		fmt.Println("Ensure esurl, username and password is set")
+	}
 }

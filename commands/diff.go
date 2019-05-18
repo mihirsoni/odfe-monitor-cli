@@ -20,7 +20,7 @@ var diff = &cobra.Command{
 
 func showDiff(cmd *cobra.Command, args []string) {
 	localMonitors, localMonitorSet := monitor.GetLocalMonitors()
-	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors()
+	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"net/url"
 
 	"../monitor"
 	"github.com/google/go-cmp/cmp"
@@ -12,4 +13,9 @@ func isMonitorChanged(localMonitor monitor.Monitor, remoteMonitor monitor.Monito
 	diff := cmp.Diff(remoteMonitor, localMonitor, cmpopts.IgnoreUnexported(monitor.Monitor{}))
 	fmt.Println(string(diff))
 	return cmp.Equal(localMonitor, remoteMonitor, cmpopts.IgnoreUnexported(monitor.Monitor{}))
+}
+
+func IsUrl(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }

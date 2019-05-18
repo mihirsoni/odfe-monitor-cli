@@ -18,7 +18,7 @@ var push = &cobra.Command{
 func runPush(cmd *cobra.Command, args []string) {
 	//Push Monitors
 	localMonitors, localMonitorSet := monitor.GetLocalMonitors()
-	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors()
+	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
@@ -38,7 +38,7 @@ func runPush(cmd *cobra.Command, args []string) {
 
 		canonicalMonitor := monitor.PrepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName])
 		// monitor.RunMonitor(allRemoteMonitors[monitorName].ID, canonicalMonitor)
-		monitor.UpdateMonitor(allRemoteMonitors[monitorName], canonicalMonitor)
+		monitor.UpdateMonitor(ESConfig, allRemoteMonitors[monitorName], canonicalMonitor)
 	}
 	fmt.Println(len(allRemoteMonitors))
 }

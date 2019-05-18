@@ -64,3 +64,9 @@ type Monitor struct {
 type Config struct {
 	Destinations map[string]string
 }
+
+type ESConfig struct {
+	URL      string
+	Username string
+	Password string
+}

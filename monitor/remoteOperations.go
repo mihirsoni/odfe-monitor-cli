@@ -30,14 +30,16 @@ func getConfigYml() Config {
 	return globalConfig
 }
 
-func GetRemoteMonitors() (map[string]Monitor, mapset.Set) {
+func GetRemoteMonitors(config ESConfig) (map[string]Monitor, mapset.Set) {
 	var (
 		r                    map[string]interface{}
 		allMonitors          []Monitor
 		allRemoteMonitorsMap map[string]Monitor
 	)
 	byt := []byte(`{"query":{ "match_all": {}}}`)
-	resp, err := http.Post("http://localhost:9200/_opendistro/_alerting/monitors/_search", "application/json", bytes.NewBuffer(byt))
+	resp, err := http.Post(config.URL+"_opendistro/_alerting/monitors/_search",
+		"application/json",
+		bytes.NewBuffer(byt))
 	if err != nil {
 		fmt.Println("Error retriving all the monitors", err)
 		os.Exit(1)
@@ -108,11 +110,13 @@ func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
 }
 
 // TODO , check if the query is incorrect
-func RunMonitor(id string, monitor Monitor) bool {
+func RunMonitor(config ESConfig, id string, monitor Monitor) bool {
 	var r map[string]interface{}
 	requestBody, err := json.Marshal(monitor)
 	fmt.Println("requestBody", string(requestBody))
-	resp, err := http.Post("http://localhost:9200/_opendistro/_alerting/monitors/_execute?dryrun=true", "application/json", bytes.NewBuffer(requestBody))
+	resp, err := http.Post(config.URL+"_opendistro/_alerting/monitors/_execute?dryrun=true",
+		"application/json",
+		bytes.NewBuffer(requestBody))
 	if err != nil {
 		fmt.Println("Error retriving all the monitors", err)
 		os.Exit(1)
@@ -141,7 +145,7 @@ func RunMonitor(id string, monitor Monitor) bool {
 	return true
 }
 
-func UpdateMonitor(remoteMonitor Monitor, monitor Monitor) {
+func UpdateMonitor(config ESConfig, remoteMonitor Monitor, monitor Monitor) {
 	id := remoteMonitor.id
 	var r map[string]interface{}
 	client := http.Client{}
@@ -153,7 +157,7 @@ func UpdateMonitor(remoteMonitor Monitor, monitor Monitor) {
 		os.Exit(1)
 	}
 	fmt.Println("Updating existing monitor", string(a))
-	req, err := http.NewRequest(http.MethodPut, "http://localhost:9200/_opendistro/_alerting/monitors/"+id, bytes.NewBuffer(a))
+	req, err := http.NewRequest(http.MethodPut, config.URL+"_opendistro/_alerting/monitors/"+id, bytes.NewBuffer(a))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
