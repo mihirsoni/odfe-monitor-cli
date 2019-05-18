@@ -1,4 +1,4 @@
-package main
+package monitor
 
 // Search hello
 type Search struct {
@@ -37,9 +37,9 @@ type Schedule struct {
 //Action action model
 type Action struct {
 	Name            string `json:"name"`
-	DestinationID   string `json:"destination_id,omitempty"`
-	SubjectTemplate Script `json:"subject_template"`
-	MessageTemplate Script `json:"message_template"`
+	DestinationID   string `json:"destination_id,omitempty" yaml:"destinationId"`
+	SubjectTemplate Script `json:"subject_template" yaml:"subjectTemplate"`
+	MessageTemplate Script `json:"message_template" yaml:"messageTemplate"`
 }
 
 type Script struct {

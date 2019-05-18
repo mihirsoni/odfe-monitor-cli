@@ -1,16 +1,36 @@
-package main
+package monitor
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 
+	"../utils"
 	mapset "github.com/deckarep/golang-set"
+	"gopkg.in/mihirsoni/yaml.v2"
 )
 
-func getRemoteMonitors() (map[string]Monitor, mapset.Set) {
+var globalConfig = getConfigYml()
+
+func getConfigYml() Config {
+	var globalConfig Config
+	yamlFile, err := ioutil.ReadFile("/Users/mihson/openes/alerting-configs/destinations.yml")
+	if err != nil {
+		fmt.Println("Unable to parse destinations file", err)
+		os.Exit(1)
+	}
+	yaml.Unmarshal(yamlFile, &globalConfig)
+	if err != nil {
+		fmt.Println("Unable to parse the yml file", err)
+		os.Exit(1)
+	}
+	return globalConfig
+}
+
+func GetRemoteMonitors() (map[string]Monitor, mapset.Set) {
 	var (
 		r                    map[string]interface{}
 		allMonitors          []Monitor
@@ -35,14 +55,14 @@ func getRemoteMonitors() (map[string]Monitor, mapset.Set) {
 		}
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
-		flippedDestinations := reverseMap(globalConfig.Destinations)
+		flippedDestinations := utils.ReverseMap(globalConfig.Destinations)
 
 		for index := range monitor.Triggers {
 			// Update destinationId and actioinId
 			for k := range monitor.Triggers[index].Actions {
 				destintionName := flippedDestinations[monitor.Triggers[index].Actions[k].DestinationID]
 				if destintionName == "" {
-					fmt.Println("Looks like remote monitor selected destination doesn't exists here, please update config")
+					fmt.Println("Looks like remote monitor selected destination doesn't exists here, please update config", monitor.Triggers[index].Actions[k].DestinationID)
 					os.Exit(1)
 				}
 				monitor.Triggers[index].Actions[k].DestinationID = destintionName
@@ -59,7 +79,7 @@ func getRemoteMonitors() (map[string]Monitor, mapset.Set) {
 	return allRemoteMonitorsMap, remoteMonitorsSet
 }
 
-func prepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
+func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
 	monitorToUpdate := localMonitor
 	//Inject triggerIds in case updating existing triggers
 	// Convert triggers to map
@@ -88,7 +108,7 @@ func prepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
 }
 
 // TODO , check if the query is incorrect
-func runMonitor(id string, monitor Monitor) bool {
+func RunMonitor(id string, monitor Monitor) bool {
 	var r map[string]interface{}
 	requestBody, err := json.Marshal(monitor)
 	fmt.Println("requestBody", string(requestBody))
@@ -121,13 +141,15 @@ func runMonitor(id string, monitor Monitor) bool {
 	return true
 }
 
-func updateMonitor(remoteMonitor Monitor, monitor Monitor) {
+func UpdateMonitor(remoteMonitor Monitor, monitor Monitor) {
 	id := remoteMonitor.id
 	var r map[string]interface{}
 	client := http.Client{}
 	a, err := json.Marshal(monitor)
+	fmt.Printf("%+v\n", monitor)
+
 	if err != nil {
-		fmt.Println("Unable to parse monitor Object")
+		fmt.Println("Unable to parse monitor Object", err)
 		os.Exit(1)
 	}
 	fmt.Println("Updating existing monitor", string(a))

@@ -9,11 +9,11 @@
     - search:
         indices: ["hello*"]
         query:
-          size : 0
+          size: 10
           query:
             match_all: {}
   triggers:
-    - name: 'Hello'
+    - name: 'Hell3'
       severity: '5'
       condition:
         script:
@@ -21,10 +21,10 @@
           lang: 'painless'
       actions:
         - name: Test
-          destination_id: 'my_chime'
-          subject_template:
+          destinationId: 'my_chime'
+          subjectTemplate:
             source: 'Hello'
             lang: 'mustache'
-          message_template:
+          messageTemplate:
             source: 'Hmmm updated message'
             lang: 'mustache'
