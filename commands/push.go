@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"../monitor"
 	mapset "github.com/deckarep/golang-set"
@@ -32,12 +33,22 @@ func runPush(cmd *cobra.Command, args []string) {
 			changedMonitors.Add(commonMonitor)
 		}
 	}
-	fmt.Println("monitors to be updated", changedMonitors)
+
+	// RunAll monitor before making update to ensure they're valid
 	for monitorToBeUpdated := range changedMonitors.Iterator().C {
 		monitorName := monitorToBeUpdated.(string)
-
 		canonicalMonitor := monitor.PrepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName], true)
-		// monitor.RunMonitor(allRemoteMonitors[monitorName].ID, canonicalMonitor)
+		_, err := monitor.RunMonitor(ESConfig, canonicalMonitor)
+		if err != nil {
+			fmt.Println("Unable to run the monitor "+canonicalMonitor.Name, err)
+			os.Exit(1)
+		}
+	}
+
+	// All monitors are verified hit update,
+	for monitorToBeUpdated := range changedMonitors.Iterator().C {
+		monitorName := monitorToBeUpdated.(string)
+		canonicalMonitor := monitor.PrepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName], true)
 		monitor.UpdateMonitor(ESConfig, allRemoteMonitors[monitorName], canonicalMonitor)
 	}
 	allNewMonitorsIT := allNewMonitors.Iterator()

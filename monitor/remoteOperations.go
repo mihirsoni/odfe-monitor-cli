@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -52,7 +53,6 @@ func GetRemoteMonitors(config ESConfig) (map[string]Monitor, mapset.Set) {
 			fmt.Println("invalid json in the monitor")
 			os.Exit(1)
 		}
-
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
 		fmt.Println(strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64))
@@ -61,7 +61,7 @@ func GetRemoteMonitors(config ESConfig) (map[string]Monitor, mapset.Set) {
 		flippedDestinations := utils.ReverseMap(globalConfig.Destinations)
 
 		for index := range monitor.Triggers {
-			// Update destinationId and actioinId
+			// flip DestinationsId
 			for k := range monitor.Triggers[index].Actions {
 				destintionName := flippedDestinations[monitor.Triggers[index].Actions[k].DestinationID]
 				if destintionName == "" {
@@ -127,20 +127,17 @@ func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor, isUpdate bool) 
 }
 
 // RunMonitor check if monitor is properly running
-func RunMonitor(config ESConfig, id string, monitor Monitor) bool {
+func RunMonitor(config ESConfig, monitor Monitor) (bool, error) {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
-		fmt.Println("Unable to parse monitor Object", err)
-		os.Exit(1)
+		return false, err
 	}
-	fmt.Println("requestBody", string(requestBody))
 	resp, err := utils.MakeRequest(http.MethodPost,
 		config.URL+"_opendistro/_alerting/monitors/_execute?dryrun=true",
 		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
-		fmt.Println("Error retriving all the monitors", err)
-		os.Exit(1)
+		return false, errors.New("Unable to execute monitor")
 	}
 	fmt.Println("r", resp)
 	res := resp["trigger_results"].(map[string]interface{})
@@ -152,16 +149,14 @@ func RunMonitor(config ESConfig, id string, monitor Monitor) bool {
 		var val map[string]interface{}
 		asd, err := json.Marshal(v)
 		if err != nil {
-			fmt.Println("unable to find the proper response ")
-			os.Exit(1)
+			return false, err
 		}
 		json.Unmarshal(asd, &val)
 		if val["error"] != nil {
-			fmt.Println("Unable to run the monitor", val["error"])
-			os.Exit(1)
+			return false, errors.New(val["error"].(string))
 		}
 	}
-	return true
+	return false, nil
 }
 
 func UpdateMonitor(config ESConfig, remoteMonitor Monitor, monitor Monitor) {
