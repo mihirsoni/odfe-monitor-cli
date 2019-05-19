@@ -36,9 +36,14 @@ func runPush(cmd *cobra.Command, args []string) {
 	for monitorToBeUpdated := range changedMonitors.Iterator().C {
 		monitorName := monitorToBeUpdated.(string)
 
-		canonicalMonitor := monitor.PrepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName])
+		canonicalMonitor := monitor.PrepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName], true)
 		// monitor.RunMonitor(allRemoteMonitors[monitorName].ID, canonicalMonitor)
 		monitor.UpdateMonitor(ESConfig, allRemoteMonitors[monitorName], canonicalMonitor)
+	}
+	allNewMonitorsIT := allNewMonitors.Iterator()
+	for newMonitor := range allNewMonitorsIT.C {
+		newMonitor := monitor.PrepareMonitor(localMonitors[newMonitor.(string)], monitor.Monitor{}, false)
+		monitor.CreateNewMonitor(ESConfig, newMonitor)
 	}
 	fmt.Println(len(allRemoteMonitors))
 }

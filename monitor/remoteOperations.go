@@ -77,19 +77,24 @@ func GetRemoteMonitors(config ESConfig) (map[string]Monitor, mapset.Set) {
 	return allRemoteMonitorsMap, remoteMonitorsSet
 }
 
-func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
+func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor, isUpdate bool) Monitor {
 	monitorToUpdate := localMonitor
 	//Inject triggerIds in case updating existing triggers
 	// Convert triggers to map
 	remoteTriggers := make(map[string]Trigger)
-	for _, remoteTrigger := range remoteMonitor.Triggers {
-		remoteTriggers[remoteTrigger.Name] = remoteTrigger
+	if isUpdate == true {
+		for _, remoteTrigger := range remoteMonitor.Triggers {
+			remoteTriggers[remoteTrigger.Name] = remoteTrigger
+		}
 	}
+
 	//Update trigger if already existed
 	// TODO::Same with Actions once released
 	for index := range monitorToUpdate.Triggers {
-		//Update trigger Id
-		if remoteTrigger, ok := remoteTriggers[monitorToUpdate.Triggers[index].Name]; ok {
+		// Assume all triggers are new
+		monitorToUpdate.Triggers[index].ID = ""
+		//Update trigger Id for existing trigger
+		if remoteTrigger, ok := remoteTriggers[monitorToUpdate.Triggers[index].Name]; ok && isUpdate {
 			monitorToUpdate.Triggers[index].ID = remoteTrigger.ID
 		}
 		// Update destinationId and actioinId
@@ -105,7 +110,7 @@ func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor) Monitor {
 	return monitorToUpdate
 }
 
-// TODO , check if the query is incorrect
+// RunMonitor check if monitor is properly running
 func RunMonitor(config ESConfig, id string, monitor Monitor) bool {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
@@ -154,6 +159,26 @@ func UpdateMonitor(config ESConfig, remoteMonitor Monitor, monitor Monitor) {
 	fmt.Println("Updating existing monitor", string(a))
 	resp, err := utils.MakeRequest(http.MethodPut,
 		config.URL+"_opendistro/_alerting/monitors/"+id,
+		a,
+		getCommonHeaders(config))
+	if err != nil {
+		fmt.Println("Error retriving all the monitors", err)
+		os.Exit(1)
+	}
+	fmt.Println(resp)
+}
+
+func CreateNewMonitor(config ESConfig, monitor Monitor) {
+
+	a, err := json.Marshal(monitor)
+	fmt.Printf("%+v\n", monitor)
+	if err != nil {
+		fmt.Println("Unable to parse monitor Object", err)
+		os.Exit(1)
+	}
+	fmt.Println("Updating existing monitor", string(a))
+	resp, err := utils.MakeRequest(http.MethodPost,
+		config.URL+"_opendistro/_alerting/monitors/",
 		a,
 		getCommonHeaders(config))
 	if err != nil {

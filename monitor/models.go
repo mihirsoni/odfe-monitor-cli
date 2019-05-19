@@ -9,7 +9,7 @@ type Search struct {
 }
 
 type Trigger struct {
-	ID        string    `json:"id"`
+	ID        string    `json:"id,omitempty"`
 	Name      string    `json:"name"`
 	Severity  string    `json:"severity"`
 	Condition Condition `json:"condition"`
