@@ -16,3 +16,9 @@ func checkUniqueMonitorNames(monitors []Monitor) bool {
 	}
 	return true
 }
+
+func getCommonHeaders(esConfig ESConfig) map[string]string {
+	return map[string]string{
+		"Content-Type": "application/json",
+	}
+}

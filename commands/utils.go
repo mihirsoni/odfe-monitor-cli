@@ -15,7 +15,7 @@ func isMonitorChanged(localMonitor monitor.Monitor, remoteMonitor monitor.Monito
 	return cmp.Equal(localMonitor, remoteMonitor, cmpopts.IgnoreUnexported(monitor.Monitor{}))
 }
 
-func IsUrl(str string) bool {
+func IsURL(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && u.Scheme != "" && u.Host != ""
 }

@@ -8,7 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//Verbose logging if it is true, default to false
 var Verbose bool
+
+// ESConfig holds the for ES configuration
 var ESConfig monitor.ESConfig
 
 var esURL string
@@ -37,7 +40,7 @@ func init() {
 func initEsConfig() {
 	if esURL != "" && userName != "" && password != "" {
 		//Validate URL
-		if IsUrl(esURL) {
+		if IsURL(esURL) {
 			// Validate ES is running?
 			ESConfig = monitor.ESConfig{URL: esURL, Username: userName, Password: password}
 		} else {
@@ -45,6 +48,6 @@ func initEsConfig() {
 			os.Exit(1)
 		}
 	} else {
-		fmt.Println("Ensure esurl, username and password is set")
+		fmt.Println("Ensure esURL, username and password is set")
 	}
 }
