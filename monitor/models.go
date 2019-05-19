@@ -36,6 +36,7 @@ type Schedule struct {
 
 //Action action model
 type Action struct {
+	ID              string `json:"id,omitempty"`
 	Name            string `json:"name"`
 	DestinationID   string `json:"destination_id,omitempty" yaml:"destinationId"`
 	SubjectTemplate Script `json:"subject_template" yaml:"subjectTemplate"`
@@ -52,13 +53,15 @@ type Condition struct {
 
 // Monitor nice
 type Monitor struct {
-	id       string
-	Name     string    `json:"name"`
-	Type     string    `json:"type"`
-	Enabled  bool      `json:"enabled"`
-	Schedule Schedule  `json:"schedule"`
-	Inputs   []Search  `json:"inputs"`
-	Triggers []Trigger `json:"triggers"`
+	primaryTerm string // Required for Update
+	seqNo       string // Required for Update
+	id          string
+	Name        string    `json:"name"`
+	Type        string    `json:"type"`
+	Enabled     bool      `json:"enabled"`
+	Schedule    Schedule  `json:"schedule"`
+	Inputs      []Search  `json:"inputs"`
+	Triggers    []Trigger `json:"triggers"`
 }
 
 type Config struct {

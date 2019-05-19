@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
 	"../utils"
 	mapset "github.com/deckarep/golang-set"
@@ -51,8 +52,12 @@ func GetRemoteMonitors(config ESConfig) (map[string]Monitor, mapset.Set) {
 			fmt.Println("invalid json in the monitor")
 			os.Exit(1)
 		}
+
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
+		fmt.Println(strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64))
+		monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
+		monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
 		flippedDestinations := utils.ReverseMap(globalConfig.Destinations)
 
 		for index := range monitor.Triggers {
@@ -98,13 +103,24 @@ func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor, isUpdate bool) 
 			monitorToUpdate.Triggers[index].ID = remoteTrigger.ID
 		}
 		// Update destinationId and actioinId
+		remoteActions := make(map[string]Action)
+		if isUpdate == true {
+			for _, remoteAction := range remoteTriggers[monitorToUpdate.Triggers[index].Name].Actions {
+				remoteActions[remoteAction.Name] = remoteAction
+			}
+		}
 		for k := range monitorToUpdate.Triggers[index].Actions {
+			monitorToUpdate.Triggers[index].Actions[k].ID = ""
 			destinationID := globalConfig.Destinations[monitorToUpdate.Triggers[index].Actions[k].DestinationID]
 			if destinationID == "" {
 				fmt.Println("destination specified doesn't exist in config file, verify it")
 				os.Exit(1)
 			}
 			monitorToUpdate.Triggers[index].Actions[k].DestinationID = destinationID
+			//Update action Id for existing action instead of creating new
+			if remoteAction, ok := remoteActions[monitorToUpdate.Triggers[index].Actions[k].Name]; ok && isUpdate {
+				monitorToUpdate.Triggers[index].Actions[k].ID = remoteAction.ID
+			}
 		}
 	}
 	return monitorToUpdate
@@ -156,9 +172,10 @@ func UpdateMonitor(config ESConfig, remoteMonitor Monitor, monitor Monitor) {
 		fmt.Println("Unable to parse monitor Object", err)
 		os.Exit(1)
 	}
-	fmt.Println("Updating existing monitor", string(a))
 	resp, err := utils.MakeRequest(http.MethodPut,
-		config.URL+"_opendistro/_alerting/monitors/"+id,
+		config.URL+"_opendistro/_alerting/monitors/"+id+
+			"?if_seq_no="+remoteMonitor.seqNo+
+			"&if_primary_term="+remoteMonitor.primaryTerm,
 		a,
 		getCommonHeaders(config))
 	if err != nil {
