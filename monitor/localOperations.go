@@ -10,7 +10,7 @@ import (
 	"gopkg.in/mihirsoni/yaml.v2"
 )
 
-func GetLocalMonitors(rootDir string) (map[string]Monitor, mapset.Set, error) {
+func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 	var monitorsMap map[string]Monitor
 	var allLocalMonitors []Monitor
 	var files []string

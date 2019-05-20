@@ -1,7 +1,6 @@
 package destination
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,6 +23,5 @@ func GetLocal(rootDir string) (map[string]string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to parse destinations file , invalid yml ?")
 	}
-	fmt.Println("destinations", destinations)
 	return destinations, nil
 }

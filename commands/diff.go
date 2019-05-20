@@ -23,11 +23,16 @@ func showDiff(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors(rootDir)
+	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
-	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(Config, destinations)
+	allRemoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(Config, destinations)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)

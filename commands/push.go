@@ -23,13 +23,17 @@ func runPush(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	//Push Monitors
-	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors(rootDir)
+
+	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
 	if err != nil {
 		fmt.Println("Unable to parse monitors from yaml files due to ", err)
 		os.Exit(1)
 	}
-	remoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(Config, destinations)
+	remoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(Config, destinations)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	// unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	// fmt.Println("All un tracked monitor", unTrackedMonitors)
 	cliNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
@@ -51,25 +55,34 @@ func runPush(cmd *cobra.Command, args []string) {
 	// RunAll monitor before making update to ensure they're valid
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		monitorName := currentMonitor.(string)
-		modifiedMonitor := monitor.PrepareMonitor(localMonitors[monitorName],
+		modifiedMonitor := monitor.Prepare(localMonitors[monitorName],
 			remoteMonitors[monitorName],
 			destinations,
 			!cliNewMonitors.Contains(monitorName))
 		//Run monitor
-		_, err := monitor.RunMonitor(Config, modifiedMonitor)
+		err = monitor.Run(Config, modifiedMonitor)
 		if err != nil {
-			fmt.Println("Unable to run the monitor "+monitorName, err)
+			fmt.Println(err)
 			os.Exit(1)
 		}
 		preparedMonitors[monitorName] = modifiedMonitor
 	}
+
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		monitorName := currentMonitor.(string)
 		isNewMonitor := cliNewMonitors.Contains(monitorName)
 		if isNewMonitor {
-			monitor.CreateNewMonitor(Config, preparedMonitors[monitorName])
+			err := monitor.Create(Config, preparedMonitors[monitorName])
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		} else {
-			monitor.UpdateMonitor(Config, remoteMonitors[monitorName], preparedMonitors[monitorName])
+			err := monitor.Update(Config, remoteMonitors[monitorName], preparedMonitors[monitorName])
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 	}
 	fmt.Println(len(remoteMonitors))

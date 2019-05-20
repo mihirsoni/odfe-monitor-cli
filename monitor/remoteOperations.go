@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,9 +10,10 @@ import (
 	"../es"
 	"../utils"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/pkg/errors"
 )
 
-func GetRemoteMonitors(config es.Config, destinationsMap map[string]string) (map[string]Monitor, mapset.Set) {
+func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[string]Monitor, mapset.Set, error) {
 	var (
 		allMonitors          []Monitor
 		allRemoteMonitorsMap map[string]Monitor
@@ -24,20 +24,17 @@ func GetRemoteMonitors(config es.Config, destinationsMap map[string]string) (map
 		byt,
 		getCommonHeaders(config))
 	if err != nil {
-		fmt.Println("Error retriving all the monitors", err)
-		os.Exit(1)
+		return nil, nil, errors.Wrap(err, "Error retriving all the monitors")
 	}
 	// Print the ID and document source for each hit.
-	for _, hit := range resp["hits"].(map[string]interface{})["hits"].([]interface{}) {
+	for _, hit := range resp.Data["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		var monitor Monitor
 		parsedMonitor, err := json.Marshal(hit.(map[string]interface{})["_source"])
 		if err != nil {
-			fmt.Println("invalid json in the monitor")
-			os.Exit(1)
+			return nil, nil, errors.Wrap(err, "Invalid remote JSON document")
 		}
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
-		fmt.Println(strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64))
 		monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
 		monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
 		flippedDestinations := utils.ReverseMap(destinationsMap)
@@ -47,8 +44,7 @@ func GetRemoteMonitors(config es.Config, destinationsMap map[string]string) (map
 			for k := range monitor.Triggers[index].Actions {
 				destintionName := flippedDestinations[monitor.Triggers[index].Actions[k].DestinationID]
 				if destintionName == "" {
-					fmt.Println("Looks like remote monitor selected destination doesn't exists here, please update config", monitor.Triggers[index].Actions[k].DestinationID)
-					os.Exit(1)
+					return nil, nil, errors.New("Remote monitor selected destination doesn't exists locally, please update destinations list if out of sync")
 				}
 				monitor.Triggers[index].Actions[k].DestinationID = destintionName
 			}
@@ -61,10 +57,10 @@ func GetRemoteMonitors(config es.Config, destinationsMap map[string]string) (map
 		remoteMonitorsSet.Add(remoteMonitor.Name)
 		allRemoteMonitorsMap[remoteMonitor.Name] = remoteMonitor
 	}
-	return allRemoteMonitorsMap, remoteMonitorsSet
+	return allRemoteMonitorsMap, remoteMonitorsSet, nil
 }
 
-func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[string]string, isUpdate bool) Monitor {
+func Prepare(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[string]string, isUpdate bool) Monitor {
 	monitorToUpdate := localMonitor
 	//Inject triggerIds in case updating existing triggers
 	// Convert triggers to map
@@ -109,75 +105,80 @@ func PrepareMonitor(localMonitor Monitor, remoteMonitor Monitor, destinationsMap
 }
 
 // RunMonitor check if monitor is properly running
-func RunMonitor(config es.Config, monitor Monitor) (bool, error) {
+func Run(config es.Config, monitor Monitor) error {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "Unable to parse monitor correctly")
 	}
 	resp, err := es.MakeRequest(http.MethodPost,
 		config.URL+"_opendistro/_alerting/monitors/_execute?dryrun=true",
 		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
-		return false, errors.New("Unable to execute monitor")
+		return errors.Wrap(err, "Unable to execute monitor")
 	}
-	fmt.Println("r", resp)
-	res := resp["trigger_results"].(map[string]interface{})
-	executionResult, err := json.Marshal(res)
-	var t interface{}
-	err = json.Unmarshal(executionResult, &t)
-	itemsMap := t.(map[string]interface{})
-	for _, v := range itemsMap {
-		var val map[string]interface{}
-		asd, err := json.Marshal(v)
+
+	monitorError, _ := resp.Data["error"].(map[string]interface{})
+	if monitorError != nil {
+		indentJSON, _ := json.MarshalIndent(monitorError, "", "\t")
+		return errors.New("Error executing monitor " + monitor.Name + "\n" + string(indentJSON))
+	}
+	executionResult, err := json.Marshal(resp.Data["trigger_results"].(map[string]interface{}))
+	if err != nil {
+		return errors.Wrap(err, "Unable to parse run monitor response")
+	}
+	var triggersResult interface{}
+	json.Unmarshal(executionResult, &triggersResult)
+	triggersResultMap := triggersResult.(map[string]interface{})
+	for _, result := range triggersResultMap {
+		// Convert response and validate if any error
+		var runResult map[string]interface{}
+		parsedResultSet, err := json.Marshal(result)
 		if err != nil {
-			return false, err
+			return errors.Wrap(err, "Unable to parse trigger result correctly")
 		}
-		json.Unmarshal(asd, &val)
-		if val["error"] != nil {
-			return false, errors.New(val["error"].(string))
+		json.Unmarshal(parsedResultSet, &runResult)
+		if runResult["error"] != nil {
+			indentJSON, _ := json.MarshalIndent(runResult, "", "\t")
+			return errors.New(string(indentJSON))
 		}
 	}
-	return false, nil
+	return nil
 }
 
-func UpdateMonitor(config es.Config, remoteMonitor Monitor, monitor Monitor) {
-	id := remoteMonitor.id
-	a, err := json.Marshal(monitor)
-	fmt.Printf("%+v\n", monitor)
+func Update(config es.Config, remoteMonitor Monitor, monitor Monitor) error {
+	requestBody, err := json.Marshal(monitor)
+	// verbose fmt.Printf("%+v\n", monitor)
 	if err != nil {
 		fmt.Println("Unable to parse monitor Object", err)
 		os.Exit(1)
 	}
-	resp, err := es.MakeRequest(http.MethodPut,
-		config.URL+"_opendistro/_alerting/monitors/"+id+
+	_, err = es.MakeRequest(http.MethodPut,
+		config.URL+"_opendistro/_alerting/monitors/"+remoteMonitor.id+
 			"?if_seq_no="+remoteMonitor.seqNo+
 			"&if_primary_term="+remoteMonitor.primaryTerm,
-		a,
+		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
-		fmt.Println("Error retriving all the monitors", err)
-		os.Exit(1)
+		return errors.Wrap(err, "Unable to update monitor "+monitor.Name)
 	}
-	fmt.Println(resp)
+	return nil
 }
 
-func CreateNewMonitor(config es.Config, monitor Monitor) {
-
-	a, err := json.Marshal(monitor)
+func Create(config es.Config, monitor Monitor) error {
+	requestBody, err := json.Marshal(monitor)
 	fmt.Printf("%+v\n", monitor)
 	if err != nil {
-		fmt.Println("Unable to parse monitor Object", err)
-		os.Exit(1)
+		return errors.Wrap(err, "Unable to parse monitor Object")
 	}
-	fmt.Println("Updating existing monitor", string(a))
-	resp, err := es.MakeRequest(http.MethodPost,
+	// fmt.Println("Updating existing monitor", string(a))
+	_, err = es.MakeRequest(http.MethodPost,
 		config.URL+"_opendistro/_alerting/monitors/",
-		a,
+		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
 		fmt.Println("Error retriving all the monitors", err)
 		os.Exit(1)
 	}
-	fmt.Println(resp)
+	return nil
 }
