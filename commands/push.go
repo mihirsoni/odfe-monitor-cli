@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"../destination"
 	"../monitor"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/spf13/cobra"
@@ -17,13 +18,18 @@ var push = &cobra.Command{
 }
 
 func runPush(cmd *cobra.Command, args []string) {
+	destinations, err := destination.GetLocal(rootDir)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	//Push Monitors
-	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors()
+	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors(rootDir)
 	if err != nil {
 		fmt.Println("Unable to parse monitors from yaml files due to ", err)
 		os.Exit(1)
 	}
-	remoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
+	remoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(Config, destinations)
 	// unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	// fmt.Println("All un tracked monitor", unTrackedMonitors)
 	cliNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
@@ -47,9 +53,10 @@ func runPush(cmd *cobra.Command, args []string) {
 		monitorName := currentMonitor.(string)
 		modifiedMonitor := monitor.PrepareMonitor(localMonitors[monitorName],
 			remoteMonitors[monitorName],
+			destinations,
 			!cliNewMonitors.Contains(monitorName))
 		//Run monitor
-		_, err := monitor.RunMonitor(ESConfig, modifiedMonitor)
+		_, err := monitor.RunMonitor(Config, modifiedMonitor)
 		if err != nil {
 			fmt.Println("Unable to run the monitor "+monitorName, err)
 			os.Exit(1)
@@ -60,9 +67,9 @@ func runPush(cmd *cobra.Command, args []string) {
 		monitorName := currentMonitor.(string)
 		isNewMonitor := cliNewMonitors.Contains(monitorName)
 		if isNewMonitor {
-			monitor.CreateNewMonitor(ESConfig, preparedMonitors[monitorName])
+			monitor.CreateNewMonitor(Config, preparedMonitors[monitorName])
 		} else {
-			monitor.UpdateMonitor(ESConfig, remoteMonitors[monitorName], preparedMonitors[monitorName])
+			monitor.UpdateMonitor(Config, remoteMonitors[monitorName], preparedMonitors[monitorName])
 		}
 	}
 	fmt.Println(len(remoteMonitors))

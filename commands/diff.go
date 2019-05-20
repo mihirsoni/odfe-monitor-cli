@@ -2,7 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
+	"../destination"
 	"../monitor"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/spf13/cobra"
@@ -16,11 +18,16 @@ var diff = &cobra.Command{
 }
 
 func showDiff(cmd *cobra.Command, args []string) {
-	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors(RootDir)
+	destinations, err := destination.GetLocal(rootDir)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors(rootDir)
 	if err != nil {
 		fmt.Println(err)
 	}
-	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
+	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(Config, destinations)
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)

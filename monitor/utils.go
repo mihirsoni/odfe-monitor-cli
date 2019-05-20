@@ -3,6 +3,8 @@ package monitor
 import (
 	"fmt"
 	"os"
+
+	"../es"
 )
 
 func checkUniqueMonitorNames(monitors []Monitor) bool {
@@ -17,7 +19,7 @@ func checkUniqueMonitorNames(monitors []Monitor) bool {
 	return true
 }
 
-func getCommonHeaders(esConfig ESConfig) map[string]string {
+func getCommonHeaders(esConfig es.Config) map[string]string {
 	return map[string]string{
 		"Content-Type": "application/json",
 	}

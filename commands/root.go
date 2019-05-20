@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"../monitor"
+	"../es"
 	"github.com/spf13/cobra"
 )
 
@@ -13,12 +13,12 @@ import (
 var Verbose bool
 
 // ESConfig holds the for ES configuration
-var ESConfig monitor.ESConfig
+var Config es.Config
 
 var esURL string
 var userName string
 var password string
-var RootDir string
+var rootDir string
 
 // RootCmd asd
 var RootCmd = &cobra.Command{
@@ -50,7 +50,7 @@ func initEsConfig() {
 		//Validate URL
 		if IsURL(esURL) {
 			// Validate ES is running?
-			ESConfig = monitor.ESConfig{URL: esURL, Username: userName, Password: password}
+			Config = es.Config{URL: esURL, Username: userName, Password: password}
 		} else {
 			fmt.Println("Invalid URL")
 			os.Exit(1)

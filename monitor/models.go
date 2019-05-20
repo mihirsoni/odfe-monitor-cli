@@ -63,13 +63,3 @@ type Monitor struct {
 	Inputs      []Search  `json:"inputs"`
 	Triggers    []Trigger `json:"triggers"`
 }
-
-type Config struct {
-	Destinations map[string]string
-}
-
-type ESConfig struct {
-	URL      string
-	Username string
-	Password string
-}
