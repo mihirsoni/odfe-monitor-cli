@@ -9,7 +9,7 @@ type Search struct {
 }
 
 type Trigger struct {
-	ID        string    `json:"id,omitempty"`
+	ID        string    `json:"id,omitempty" yaml:"-"`
 	Name      string    `json:"name"`
 	Severity  string    `json:"severity"`
 	Condition Condition `json:"condition"`
@@ -36,7 +36,7 @@ type Schedule struct {
 
 //Action action model
 type Action struct {
-	ID              string `json:"id,omitempty"`
+	ID              string `json:"id,omitempty" yaml:"-"`
 	Name            string `json:"name"`
 	DestinationID   string `json:"destination_id,omitempty" yaml:"destinationId"`
 	SubjectTemplate Script `json:"subject_template" yaml:"subjectTemplate"`

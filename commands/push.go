@@ -19,44 +19,49 @@ var push = &cobra.Command{
 func runPush(cmd *cobra.Command, args []string) {
 	//Push Monitors
 	localMonitors, localMonitorSet := monitor.GetLocalMonitors()
-	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
-	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
-	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
-	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
-	fmt.Println("All un tracked monitor", unTrackedMonitors)
-	fmt.Println("All new monitor", allNewMonitors)
-	fmt.Println("All common monitors", allCommonMonitors)
-	changedMonitors := mapset.NewSet()
-	allCommonMonitorsIt := allCommonMonitors.Iterator()
-	for commonMonitor := range allCommonMonitorsIt.C {
-		if isMonitorChanged(localMonitors[commonMonitor.(string)], allRemoteMonitors[commonMonitor.(string)]) != true {
-			changedMonitors.Add(commonMonitor)
+	remoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
+	// unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
+	// fmt.Println("All un tracked monitor", unTrackedMonitors)
+	cliNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
+	cliManagedMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
+	fmt.Println("All new monitor", cliNewMonitors)
+	fmt.Println("All common monitors", cliManagedMonitors)
+
+	modifiedMonitors := mapset.NewSet()
+	cliManagedMonitorsIt := cliManagedMonitors.Iterator()
+	for cliManaged := range cliManagedMonitorsIt.C {
+		if isMonitorChanged(localMonitors[cliManaged.(string)], remoteMonitors[cliManaged.(string)]) != true {
+			modifiedMonitors.Add(cliManaged)
 		}
 	}
-
+	monitorsToBeUpdated := cliNewMonitors.Union(modifiedMonitors)
+	fmt.Println("All common monitors", monitorsToBeUpdated)
+	var preparedMonitors map[string]monitor.Monitor
+	preparedMonitors = make(map[string]monitor.Monitor)
 	// RunAll monitor before making update to ensure they're valid
-	for monitorToBeUpdated := range changedMonitors.Iterator().C {
-		monitorName := monitorToBeUpdated.(string)
-		canonicalMonitor := monitor.PrepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName], true)
-		_, err := monitor.RunMonitor(ESConfig, canonicalMonitor)
+	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
+		monitorName := currentMonitor.(string)
+		modifiedMonitor := monitor.PrepareMonitor(localMonitors[monitorName],
+			remoteMonitors[monitorName],
+			!cliNewMonitors.Contains(monitorName))
+		//Run monitor
+		_, err := monitor.RunMonitor(ESConfig, modifiedMonitor)
 		if err != nil {
-			fmt.Println("Unable to run the monitor "+canonicalMonitor.Name, err)
+			fmt.Println("Unable to run the monitor "+monitorName, err)
 			os.Exit(1)
 		}
+		preparedMonitors[monitorName] = modifiedMonitor
 	}
-
-	// All monitors are verified hit update,
-	for monitorToBeUpdated := range changedMonitors.Iterator().C {
-		monitorName := monitorToBeUpdated.(string)
-		canonicalMonitor := monitor.PrepareMonitor(localMonitors[monitorName], allRemoteMonitors[monitorName], true)
-		monitor.UpdateMonitor(ESConfig, allRemoteMonitors[monitorName], canonicalMonitor)
+	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
+		monitorName := currentMonitor.(string)
+		isNewMonitor := cliNewMonitors.Contains(monitorName)
+		if isNewMonitor {
+			monitor.CreateNewMonitor(ESConfig, preparedMonitors[monitorName])
+		} else {
+			monitor.UpdateMonitor(ESConfig, remoteMonitors[monitorName], preparedMonitors[monitorName])
+		}
 	}
-	allNewMonitorsIT := allNewMonitors.Iterator()
-	for newMonitor := range allNewMonitorsIT.C {
-		newMonitor := monitor.PrepareMonitor(localMonitors[newMonitor.(string)], monitor.Monitor{}, false)
-		monitor.CreateNewMonitor(ESConfig, newMonitor)
-	}
-	fmt.Println(len(allRemoteMonitors))
+	fmt.Println(len(remoteMonitors))
 }
 
 func init() {
