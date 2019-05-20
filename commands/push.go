@@ -18,7 +18,11 @@ var push = &cobra.Command{
 
 func runPush(cmd *cobra.Command, args []string) {
 	//Push Monitors
-	localMonitors, localMonitorSet := monitor.GetLocalMonitors()
+	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors()
+	if err != nil {
+		fmt.Println("Unable to parse monitors from yaml files due to ", err)
+		os.Exit(1)
+	}
 	remoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
 	// unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	// fmt.Println("All un tracked monitor", unTrackedMonitors)

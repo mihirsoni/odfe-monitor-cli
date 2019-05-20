@@ -16,7 +16,10 @@ var diff = &cobra.Command{
 }
 
 func showDiff(cmd *cobra.Command, args []string) {
-	localMonitors, localMonitorSet := monitor.GetLocalMonitors()
+	localMonitors, localMonitorSet, err := monitor.GetLocalMonitors(RootDir)
+	if err != nil {
+		fmt.Println(err)
+	}
 	allRemoteMonitors, remoteMonitorsSet := monitor.GetRemoteMonitors(ESConfig)
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)

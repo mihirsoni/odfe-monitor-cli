@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -17,6 +18,7 @@ var ESConfig monitor.ESConfig
 var esURL string
 var userName string
 var password string
+var RootDir string
 
 // RootCmd asd
 var RootCmd = &cobra.Command{
@@ -31,6 +33,12 @@ var RootCmd = &cobra.Command{
 
 func init() {
 	cobra.OnInitialize(initEsConfig)
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println(errors.New("Unable to get CWD"))
+		os.Exit(1)
+	}
+	RootCmd.PersistentFlags().StringVarP(&rootDir, "rootDir", "r", dir, "root directory where monitors yml files")
 	RootCmd.PersistentFlags().StringVarP(&esURL, "es-url", "e", "http://localhost:9200/", "URL to connect to Elasticsearch")
 	RootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "URL to connect to Elasticsearch")
 	RootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "URL to connect to Elasticsearch")
