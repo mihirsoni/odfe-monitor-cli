@@ -34,8 +34,8 @@ func runPush(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	//TODO:: May be delete un tracked ?
 	// unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
-	// fmt.Println("All un tracked monitor", unTrackedMonitors)
 	cliNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	cliManagedMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
 	fmt.Println("All new monitor", cliNewMonitors)

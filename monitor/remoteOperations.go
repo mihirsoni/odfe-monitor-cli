@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetAllRemote This functions will pull all the monitors from ES cluster
 func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[string]Monitor, mapset.Set, error) {
 	var (
 		allMonitors          []Monitor
@@ -60,6 +61,7 @@ func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[stri
 	return allRemoteMonitorsMap, remoteMonitorsSet, nil
 }
 
+// Prepare This func modify the object to populate correct IDs
 func Prepare(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[string]string, isUpdate bool) Monitor {
 	monitorToUpdate := localMonitor
 	//Inject triggerIds in case updating existing triggers
@@ -104,7 +106,7 @@ func Prepare(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[st
 	return monitorToUpdate
 }
 
-// RunMonitor check if monitor is properly running
+// Run Run monitor using execute API
 func Run(config es.Config, monitor Monitor) error {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
@@ -146,6 +148,7 @@ func Run(config es.Config, monitor Monitor) error {
 	return nil
 }
 
+// Update This func will update existing monitor
 func Update(config es.Config, remoteMonitor Monitor, monitor Monitor) error {
 	requestBody, err := json.Marshal(monitor)
 	// verbose fmt.Printf("%+v\n", monitor)
@@ -165,20 +168,19 @@ func Update(config es.Config, remoteMonitor Monitor, monitor Monitor) error {
 	return nil
 }
 
+// Create This func will create new Monitor
 func Create(config es.Config, monitor Monitor) error {
 	requestBody, err := json.Marshal(monitor)
 	fmt.Printf("%+v\n", monitor)
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse monitor Object")
 	}
-	// fmt.Println("Updating existing monitor", string(a))
 	_, err = es.MakeRequest(http.MethodPost,
 		config.URL+"_opendistro/_alerting/monitors/",
 		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
-		fmt.Println("Error retriving all the monitors", err)
-		os.Exit(1)
+		return errors.Wrap(err, "Unable to create new Monitor")
 	}
 	return nil
 }
