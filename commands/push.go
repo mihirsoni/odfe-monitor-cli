@@ -7,6 +7,7 @@ import (
 	"../destination"
 	"../monitor"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -44,15 +45,21 @@ func runPush(cmd *cobra.Command, args []string) {
 	modifiedMonitors := mapset.NewSet()
 	cliManagedMonitorsIt := cliManagedMonitors.Iterator()
 	for cliManaged := range cliManagedMonitorsIt.C {
-		if isMonitorChanged(localMonitors[cliManaged.(string)], remoteMonitors[cliManaged.(string)]) != true {
+		if isMonitorChanged(localMonitors[cliManaged.(string)], remoteMonitors[cliManaged.(string)]) == true {
 			modifiedMonitors.Add(cliManaged)
 		}
 	}
 	monitorsToBeUpdated := cliNewMonitors.Union(modifiedMonitors)
 	fmt.Println("All common monitors", monitorsToBeUpdated)
+	if monitorsToBeUpdated.Cardinality() == 0 {
+		color.Green("No monitors to update")
+		os.Exit(1)
+	}
+
 	var preparedMonitors map[string]monitor.Monitor
 	preparedMonitors = make(map[string]monitor.Monitor)
 	// RunAll monitor before making update to ensure they're valid
+	runChan := make(chan error)
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		monitorName := currentMonitor.(string)
 		modifiedMonitor := monitor.Prepare(localMonitors[monitorName],
@@ -60,32 +67,39 @@ func runPush(cmd *cobra.Command, args []string) {
 			destinations,
 			!cliNewMonitors.Contains(monitorName))
 		//Run monitor
-		err = monitor.Run(Config, modifiedMonitor)
+		preparedMonitors[monitorName] = modifiedMonitor
+		go monitor.Run(Config, modifiedMonitor, runChan)
+	}
+	for range monitorsToBeUpdated.Iterator().C {
+		err = <-runChan
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		preparedMonitors[monitorName] = modifiedMonitor
 	}
-
+	createOrUpdate := make(chan error)
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		monitorName := currentMonitor.(string)
 		isNewMonitor := cliNewMonitors.Contains(monitorName)
 		if isNewMonitor {
-			err := monitor.Create(Config, preparedMonitors[monitorName])
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+			monitor.Create(Config, preparedMonitors[monitorName], createOrUpdate)
 		} else {
-			err := monitor.Update(Config, remoteMonitors[monitorName], preparedMonitors[monitorName])
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+			monitor.Update(Config, remoteMonitors[monitorName], preparedMonitors[monitorName], createOrUpdate)
 		}
 	}
-	fmt.Println(len(remoteMonitors))
+	successfulUpdates := 0
+	for range monitorsToBeUpdated.Iterator().C {
+		err = <-createOrUpdate
+		fmt.Println("Hello", err)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("Hello")
+			successfulUpdates++
+		}
+	}
+	color.Green("Successfully created / updated monitors ", string(successfulUpdates))
+	os.Exit(1)
 }
 
 func init() {

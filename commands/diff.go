@@ -21,17 +21,6 @@ var diff = &cobra.Command{
 }
 var dmp = diffmatchpatch.New()
 
-func isMonitorChanged(localMonitor monitor.Monitor, remoteMonitor monitor.Monitor) bool {
-	localYaml, _ := yaml.Marshal(localMonitor)
-	remoteYml, _ := yaml.Marshal(remoteMonitor)
-	diffs := dmp.DiffMain(string(remoteYml), string(localYaml), true)
-	fmt.Println("diffs", len(diffs))
-	if len(diffs) > 1 {
-		return true
-	}
-	return false
-}
-
 func showDiff(cmd *cobra.Command, args []string) {
 	destinations, err := destination.GetLocal(rootDir)
 	if err != nil {
@@ -41,6 +30,10 @@ func showDiff(cmd *cobra.Command, args []string) {
 	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
+	}
+	if localMonitorSet.Cardinality() == 0 {
+		fmt.Println("No monitors found")
 		os.Exit(1)
 	}
 	allRemoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(Config, destinations)

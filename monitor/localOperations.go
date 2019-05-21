@@ -22,7 +22,9 @@ func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 		if info.Name() == "destinations.yml" || info.IsDir() {
 			return nil
 		}
-		files = append(files, path)
+		if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".yml" {
+			files = append(files, path)
+		}
 		return nil
 	})
 	if err != nil {

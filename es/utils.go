@@ -11,7 +11,10 @@ type Response struct {
 	Data   map[string]interface{}
 }
 
-func MakeRequest(method string, endPoint string, body []byte, headers map[string]string) (Response, error) {
+func MakeRequest(method string,
+	endPoint string,
+	body []byte,
+	headers map[string]string) (Response, error) {
 	var response Response
 	client := http.Client{}
 	req, err := http.NewRequest(method, endPoint, bytes.NewBuffer(body))

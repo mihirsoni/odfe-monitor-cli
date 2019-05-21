@@ -107,27 +107,28 @@ func Prepare(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[st
 }
 
 // Run Run monitor using execute API
-func Run(config es.Config, monitor Monitor) error {
+func Run(config es.Config, monitor Monitor, ch chan<- error) {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
-		return errors.Wrap(err, "Unable to parse monitor correctly")
+		ch <- errors.Wrap(err, "Unable to parse monitor correctly")
 	}
 	resp, err := es.MakeRequest(http.MethodPost,
 		config.URL+"_opendistro/_alerting/monitors/_execute?dryrun=true",
 		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
-		return errors.Wrap(err, "Unable to execute monitor")
+		ch <- errors.Wrap(err, "Unable to execute monitor")
 	}
 
 	monitorError, _ := resp.Data["error"].(map[string]interface{})
 	if monitorError != nil {
 		indentJSON, _ := json.MarshalIndent(monitorError, "", "\t")
-		return errors.New("Error executing monitor " + monitor.Name + "\n" + string(indentJSON))
+		ch <- errors.New("Error executing monitor " + monitor.Name + "\n" + string(indentJSON))
+		return
 	}
 	executionResult, err := json.Marshal(resp.Data["trigger_results"].(map[string]interface{}))
 	if err != nil {
-		return errors.Wrap(err, "Unable to parse run monitor response")
+		ch <- errors.Wrap(err, "Unable to parse run monitor response")
 	}
 	var triggersResult interface{}
 	json.Unmarshal(executionResult, &triggersResult)
@@ -137,24 +138,23 @@ func Run(config es.Config, monitor Monitor) error {
 		var runResult map[string]interface{}
 		parsedResultSet, err := json.Marshal(result)
 		if err != nil {
-			return errors.Wrap(err, "Unable to parse trigger result correctly")
+			ch <- errors.Wrap(err, "Unable to parse trigger result correctly")
 		}
 		json.Unmarshal(parsedResultSet, &runResult)
 		if runResult["error"] != nil {
 			indentJSON, _ := json.MarshalIndent(runResult, "", "\t")
-			return errors.New(string(indentJSON))
+			ch <- errors.New(string(indentJSON))
 		}
 	}
-	return nil
+	ch <- nil
 }
 
 // Update This func will update existing monitor
-func Update(config es.Config, remoteMonitor Monitor, monitor Monitor) error {
+func Update(config es.Config, remoteMonitor Monitor, monitor Monitor, ch chan<- error) {
 	requestBody, err := json.Marshal(monitor)
 	// verbose fmt.Printf("%+v\n", monitor)
 	if err != nil {
-		fmt.Println("Unable to parse monitor Object", err)
-		os.Exit(1)
+		ch <- errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
 	_, err = es.MakeRequest(http.MethodPut,
 		config.URL+"_opendistro/_alerting/monitors/"+remoteMonitor.id+
@@ -163,24 +163,23 @@ func Update(config es.Config, remoteMonitor Monitor, monitor Monitor) error {
 		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
-		return errors.Wrap(err, "Unable to update monitor "+monitor.Name)
+		ch <- errors.Wrap(err, "Unable to update monitor "+monitor.Name)
 	}
-	return nil
+	ch <- nil
 }
 
 // Create This func will create new Monitor
-func Create(config es.Config, monitor Monitor) error {
+func Create(config es.Config, monitor Monitor, ch chan<- error) {
 	requestBody, err := json.Marshal(monitor)
-	fmt.Printf("%+v\n", monitor)
 	if err != nil {
-		return errors.Wrap(err, "Unable to parse monitor Object")
+		ch <- errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
 	_, err = es.MakeRequest(http.MethodPost,
 		config.URL+"_opendistro/_alerting/monitors/",
 		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
-		return errors.Wrap(err, "Unable to create new Monitor")
+		ch <- errors.Wrap(err, "Unable to create new Monitor")
 	}
-	return nil
+	ch <- nil
 }
