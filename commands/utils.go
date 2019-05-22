@@ -1,12 +1,21 @@
 package commands
 
 import (
+	"fmt"
 	"net/url"
+	"os"
 
 	"../monitor"
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v3"
 )
+
+func check(err error) {
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
 
 // Skip IDs in comparision
 func isIDKey(p cmp.Path) bool {
