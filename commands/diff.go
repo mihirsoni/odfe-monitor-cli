@@ -9,44 +9,38 @@ import (
 	mapset "github.com/deckarep/golang-set"
 	"github.com/fatih/color"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
 var diff = &cobra.Command{
 	Use:   "diff",
-	Short: "difference between local and remote monitors",
-	Long:  `this will show print diff between local and remote monitors.`,
+	Short: "delta between local and remote monitors",
+	Long:  `this will print diff between local and remote monitors.`,
 	Run:   showDiff,
 }
 var dmp = diffmatchpatch.New()
 
 func showDiff(cmd *cobra.Command, args []string) {
 	destinations, err := destination.GetLocal(rootDir)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	check(err)
 	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	check(err)
 	if localMonitorSet.Cardinality() == 0 {
-		fmt.Println("No monitors found")
+		log.Info("There are no monitors")
 		os.Exit(1)
 	}
 	allRemoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(Config, destinations)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	check(err)
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
-	fmt.Println("All un tracked monitor", unTrackedMonitors)
-	fmt.Println("All new monitor", allNewMonitors)
-	fmt.Println("All common monitors", allCommonMonitors)
+	if Verbose {
+		log.Debug("Un tracked monitors", unTrackedMonitors)
+		log.Debug("New monitors", allNewMonitors)
+		log.Debug("Common monitors", allCommonMonitors)
+	}
 	changedMonitors := mapset.NewSet()
 	allCommonMonitorsIt := allCommonMonitors.Iterator()
 	for commonMonitor := range allCommonMonitorsIt.C {
@@ -74,11 +68,9 @@ func showDiff(cmd *cobra.Command, args []string) {
 		for monitorToBeUpdated := range changedMonitors.Iterator().C {
 			monitorName := monitorToBeUpdated.(string)
 			localYaml, err := yaml.Marshal(localMonitors[monitorName])
+			check(err)
 			remoteYml, err := yaml.Marshal(allRemoteMonitors[monitorName])
-			if err != nil {
-				fmt.Printf("Unable to convert into YML")
-				os.Exit(1)
-			}
+			check(err)
 			diffs := dmp.DiffMain(string(remoteYml), string(localYaml), true)
 			diffs = dmp.DiffCleanupSemantic(diffs)
 			fmt.Println(dmp.DiffPrettyText(diffs))

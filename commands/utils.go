@@ -1,26 +1,17 @@
 package commands
 
 import (
-	"fmt"
 	"net/url"
-	"os"
 
 	"../monitor"
-	"github.com/google/go-cmp/cmp"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
 func check(err error) {
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
-}
-
-// Skip IDs in comparision
-func isIDKey(p cmp.Path) bool {
-	step := p[len(p)-1].String()
-	return step == ".ID"
 }
 
 func isMonitorChanged(localMonitor monitor.Monitor, remoteMonitor monitor.Monitor) bool {

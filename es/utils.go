@@ -7,7 +7,7 @@ import (
 )
 
 type Response struct {
-	Status string
+	Status int
 	Data   map[string]interface{}
 }
 
@@ -27,6 +27,6 @@ func MakeRequest(method string,
 	}
 	defer resp.Body.Close()
 	json.NewDecoder(resp.Body).Decode(&response.Data)
-	response.Status = resp.Status
+	response.Status = resp.StatusCode
 	return response, nil
 }

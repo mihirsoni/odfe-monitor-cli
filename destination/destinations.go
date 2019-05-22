@@ -52,7 +52,7 @@ func Sync(rootDir string, config es.Config) (map[string]string, error) {
 	}
 	var remoteDestinations = make(map[string]string)
 
-	if resp.Status == "200 OK" {
+	if resp.Status == 200 {
 		for _, hit := range resp.Data["hits"].(map[string]interface{})["hits"].([]interface{}) {
 			// Improve using gJson , if more complex operation required
 			id := hit.(map[string]interface{})["_id"].(string)

@@ -1,11 +1,10 @@
 package commands
 
 import (
-	"errors"
-	"fmt"
 	"os"
 
 	"../es"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -32,11 +31,21 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
+	if Verbose {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
+	log.SetFormatter(&log.TextFormatter{
+		DisableLevelTruncation: true,
+		FieldMap: log.FieldMap{
+			log.FieldKeyLevel: "asd",
+		},
+	})
 	cobra.OnInitialize(initEsConfig)
 	dir, err := os.Getwd()
 	if err != nil {
-		fmt.Println(errors.New("Unable to get CWD"))
-		os.Exit(1)
+		log.Fatal("Unable to get CWD", err)
 	}
 	RootCmd.PersistentFlags().StringVarP(&rootDir, "rootDir", "r", dir, "root directory where monitors yml files")
 	RootCmd.PersistentFlags().StringVarP(&esURL, "esUrl", "e", "http://localhost:9200/", "URL to connect to Elasticsearch")
@@ -52,10 +61,10 @@ func initEsConfig() {
 			// Validate ES is running?
 			Config = es.Config{URL: esURL, Username: userName, Password: password}
 		} else {
-			fmt.Println("Invalid URL")
-			os.Exit(1)
+			log.WithFields(log.Fields{"elasticsearch-url": esURL}).Fatal("Elasticsearch url is invalid")
 		}
 	} else {
-		fmt.Println("Ensure esURL, username and password is set")
+		// Solve with required flags
+		log.Fatal("Ensure esURL, username and password is set")
 	}
 }

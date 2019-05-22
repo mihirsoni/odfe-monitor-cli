@@ -2,9 +2,7 @@ package monitor
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"../es"
@@ -62,7 +60,10 @@ func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[stri
 }
 
 // Prepare This func modify the object to populate correct IDs
-func Prepare(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[string]string, isUpdate bool) Monitor {
+func Prepare(localMonitor Monitor,
+	remoteMonitor Monitor,
+	destinationsMap map[string]string,
+	isUpdate bool) (Monitor, error) {
 	monitorToUpdate := localMonitor
 	//Inject triggerIds in case updating existing triggers
 	// Convert triggers to map
@@ -93,8 +94,8 @@ func Prepare(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[st
 			monitorToUpdate.Triggers[index].Actions[k].ID = ""
 			destinationID := destinationsMap[monitorToUpdate.Triggers[index].Actions[k].DestinationID]
 			if destinationID == "" {
-				fmt.Println("destination specified doesn't exist in config file, verify it")
-				os.Exit(1)
+				return monitorToUpdate,
+					errors.New("Destination specified doesn't exist in config file, verify it")
 			}
 			monitorToUpdate.Triggers[index].Actions[k].DestinationID = destinationID
 			//Update action Id for existing action instead of creating new
@@ -103,7 +104,7 @@ func Prepare(localMonitor Monitor, remoteMonitor Monitor, destinationsMap map[st
 			}
 		}
 	}
-	return monitorToUpdate
+	return monitorToUpdate, nil
 }
 
 // Run Run monitor using execute API
