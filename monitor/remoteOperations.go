@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -39,12 +40,16 @@ func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[stri
 		flippedDestinations := utils.ReverseMap(destinationsMap)
 
 		for index := range monitor.Triggers {
+			//Modify the condition
+			monitor.Triggers[index].YCondition = monitor.Triggers[index].Condition.Script.Source
 			// flip DestinationsId
 			for k := range monitor.Triggers[index].Actions {
 				destintionName := flippedDestinations[monitor.Triggers[index].Actions[k].DestinationID]
 				if destintionName == "" {
 					return nil, nil, errors.New("Remote monitor selected destination doesn't exists locally, please update destinations list if out of sync")
 				}
+				monitor.Triggers[index].Actions[k].Subject = monitor.Triggers[index].Actions[k].SubjectTemplate.Source
+				monitor.Triggers[index].Actions[k].Message = monitor.Triggers[index].Actions[k].MessageTemplate.Source
 				monitor.Triggers[index].Actions[k].DestinationID = destintionName
 			}
 		}
@@ -74,12 +79,20 @@ func Prepare(localMonitor Monitor,
 		}
 	}
 	//Update trigger if already existed
+	//TODO:: break down this operation
 	for index := range monitorToUpdate.Triggers {
 		// Assume all triggers are new
 		monitorToUpdate.Triggers[index].ID = ""
 		//Update trigger Id for existing trigger
 		if remoteTrigger, ok := remoteTriggers[monitorToUpdate.Triggers[index].Name]; ok && isUpdate {
 			monitorToUpdate.Triggers[index].ID = remoteTrigger.ID
+		}
+		//Simplify condition
+		monitorToUpdate.Triggers[index].Condition = Condition{
+			Script{
+				Source: monitorToUpdate.Triggers[index].YCondition,
+				Lang:   "painless",
+			},
 		}
 		// Update destinationId and actioinId
 		remoteActions := make(map[string]Action)
@@ -89,20 +102,30 @@ func Prepare(localMonitor Monitor,
 			}
 		}
 		for k := range monitorToUpdate.Triggers[index].Actions {
-			monitorToUpdate.Triggers[index].Actions[k].ID = ""
-			destinationName := monitorToUpdate.Triggers[index].Actions[k].DestinationID
-			destinationID := destinationsMap[destinationName]
-			if destinationID == "" {
+			currentAction := monitorToUpdate.Triggers[index].Actions[k]
+			currentAction.ID = ""
+			remoteDestinationID := destinationsMap[currentAction.DestinationID]
+			if remoteDestinationID == "" {
 				return monitorToUpdate,
-					errors.New("Specified destination " + destinationName +
+					errors.New("Specified destination " + currentAction.DestinationID +
 						" in monitor " + monitorToUpdate.Name +
 						" doesn't exist in destinations list, sync destinations using sync --destination")
 			}
-			monitorToUpdate.Triggers[index].Actions[k].DestinationID = destinationID
-			//Update action Id for existing action instead of creating new
-			if remoteAction, ok := remoteActions[monitorToUpdate.Triggers[index].Actions[k].Name]; ok && isUpdate {
-				monitorToUpdate.Triggers[index].Actions[k].ID = remoteAction.ID
+			currentAction.DestinationID = remoteDestinationID
+			// Converting subject to adhere to API
+			currentAction.SubjectTemplate = Script{
+				Source: currentAction.Subject,
+				Lang:   "mustache",
 			}
+			currentAction.MessageTemplate = Script{
+				Source: currentAction.Message,
+				Lang:   "mustache",
+			}
+			//Update action Id for existing action instead of creating new
+			if remoteAction, ok := remoteActions[currentAction.Name]; ok && isUpdate {
+				currentAction.ID = remoteAction.ID
+			}
+			monitorToUpdate.Triggers[index].Actions[k] = currentAction
 		}
 	}
 	return monitorToUpdate, nil
@@ -111,6 +134,7 @@ func Prepare(localMonitor Monitor,
 // Run will execute monitor
 func Run(config es.Config, monitor Monitor, ch chan<- error) {
 	requestBody, err := json.Marshal(monitor)
+	fmt.Println("monitor", string(requestBody))
 	if err != nil {
 		ch <- errors.Wrap(err, "Unable to parse monitor correctly")
 	}

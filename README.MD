@@ -77,18 +77,11 @@ Sample monitor
   triggers:
     - name: '500'
       severity: '2'
-      condition:
-        script:
-          source : "return true"
-          lang: 'painless'
+      condition: "return true"
       actions:
         - name: Sample Action
           destinationId: test_my_destination
-          subjectTemplate:
-            source: 'Error'
-            lang: 'mustache'
-          messageTemplate:
-            lang: 'mustache'
-            source: There is an error
+          subject:'Error'
+          message: 'There is an error'
 
 ```

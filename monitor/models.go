@@ -9,11 +9,13 @@ type Search struct {
 }
 
 type Trigger struct {
-	ID        string    `json:"id,omitempty" yaml:"-"`
-	Name      string    `json:"name"`
-	Severity  string    `json:"severity"`
-	Condition Condition `json:"condition"`
-	Actions   []Action  `json:"actions,omitempty"`
+	ID       string `json:"id,omitempty" yaml:"-"`
+	Name     string `json:"name"`
+	Severity string `json:"severity"`
+	//YCondition (YAML Condition), is to to minimize customer input for now
+	YCondition string    `json:"-" yaml:"condition"`
+	Condition  Condition `json:"condition" yaml:"-"`
+	Actions    []Action  `json:"actions,omitempty"`
 }
 
 // Period hello
@@ -36,11 +38,15 @@ type Schedule struct {
 
 //Action action model
 type Action struct {
-	ID              string `json:"id,omitempty" yaml:"-"`
-	Name            string `json:"name"`
-	DestinationID   string `json:"destination_id,omitempty" yaml:"destinationId"`
-	SubjectTemplate Script `json:"subject_template" yaml:"subjectTemplate"`
-	MessageTemplate Script `json:"message_template" yaml:"messageTemplate"`
+	ID            string `json:"id,omitempty" yaml:"-"`
+	Name          string `json:"name"`
+	DestinationID string `json:"destination_id,omitempty" yaml:"destinationId"`
+	// Why duplicated Subject and Message ? This is to simplify customer experience on writing new monitors.
+	// Taking input which is important default are being filled by CLI
+	Subject         string `json:"-"`
+	Message         string `json:"-"`
+	SubjectTemplate Script `json:"subject_template" yaml:"-"`
+	MessageTemplate Script `json:"message_template" yaml:"-"`
 }
 
 type Script struct {
