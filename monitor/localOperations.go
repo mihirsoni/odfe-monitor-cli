@@ -19,7 +19,7 @@ func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 		return nil, nil, errors.Wrap(err, "rootDir does not exist")
 	}
 	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-		if info.Name() == "destinations.yml" || info.IsDir() {
+		if info.Name() == "destinations.yml" || info.Name() == "destinations.yaml" || info.IsDir() {
 			return nil
 		}
 		if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".yml" {

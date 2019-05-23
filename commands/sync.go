@@ -11,17 +11,18 @@ import (
 
 var syncDestinatons bool
 var sync = &cobra.Command{
-	Use:              "sync",
-	TraverseChildren: true,
-	Short:            "sync operation",
-	Long:             `This command will push all the updated changes to elasticsearch cluster`,
-	Run:              runSync,
+	Use:   "sync [Flags]",
+	Short: "sync operation",
+	Long:  `This command will fetch all the destinations from ES cluster and write them into a local file`,
+	Run:   runSync,
 }
 
 func runSync(cmd *cobra.Command, args []string) {
-	destinations, err := destination.Sync(rootDir, Config)
-	check(err)
-	writeDestinations(destinations)
+	if syncDestinatons {
+		destinations, err := destination.Sync(rootDir, Config)
+		check(err)
+		writeDestinations(destinations)
+	}
 }
 
 func writeDestinations(destinations map[string]string) {
@@ -39,6 +40,6 @@ func writeDestinations(destinations map[string]string) {
 }
 
 func init() {
-	RootCmd.Flags().BoolVarP(&syncDestinatons, "destinations", "d", false, "sync all destinations from ES and write destinations.yml file")
-	RootCmd.AddCommand(sync)
+	sync.Flags().BoolVarP(&syncDestinatons, "destinations", "d", false, "sync all destinations from ES and write destinations.yml file")
+	rootCmd.AddCommand(sync)
 }

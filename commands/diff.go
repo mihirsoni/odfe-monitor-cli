@@ -17,7 +17,7 @@ import (
 var diff = &cobra.Command{
 	Use:   "diff",
 	Short: "delta between local and remote monitors",
-	Long:  `this will print diff between local and remote monitors.`,
+	Long:  `This command will print delta between local and remote monitors.`,
 	Run:   showDiff,
 }
 var dmp = diffmatchpatch.New()
@@ -36,11 +36,7 @@ func showDiff(cmd *cobra.Command, args []string) {
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	allCommonMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
-	if Verbose {
-		log.Debug("Un tracked monitors", unTrackedMonitors)
-		log.Debug("New monitors", allNewMonitors)
-		log.Debug("Common monitors", allCommonMonitors)
-	}
+
 	changedMonitors := mapset.NewSet()
 	allCommonMonitorsIt := allCommonMonitors.Iterator()
 	for commonMonitor := range allCommonMonitorsIt.C {
@@ -49,8 +45,12 @@ func showDiff(cmd *cobra.Command, args []string) {
 			changedMonitors.Add(commonMonitor)
 		}
 	}
+	hasDeleted := unTrackedMonitors.Cardinality() > 0
+	hasModified := changedMonitors.Cardinality() > 0
+	hasCreated := allNewMonitors.Cardinality() > 0
 	//All New Monitors
-	if allNewMonitors.Cardinality() > 0 {
+	if hasCreated {
+		log.Debug("New monitors", allNewMonitors)
 		fmt.Println("---------------------------------------------------------")
 		fmt.Println(" These monitors are currently missing in alerting ")
 		fmt.Println("---------------------------------------------------------")
@@ -61,7 +61,8 @@ func showDiff(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if changedMonitors.Cardinality() > 0 {
+	if hasModified {
+		log.Debug("Common monitors", allCommonMonitors)
 		fmt.Println("---------------------------------------------------------")
 		fmt.Println(" These are existing monitors, which have been modified ")
 		fmt.Println("---------------------------------------------------------")
@@ -76,8 +77,19 @@ func showDiff(cmd *cobra.Command, args []string) {
 			fmt.Println(dmp.DiffPrettyText(diffs))
 		}
 	}
+	if hasDeleted {
+		log.Debug("Un tracked monitors", unTrackedMonitors)
+		fmt.Println("---------------------------------------------------------")
+		fmt.Println(" These monitors will be deleted if push with the --delete flag")
+		fmt.Println("---------------------------------------------------------")
+		for newMonitor := range unTrackedMonitors.Iterator().C {
+			monitorName := newMonitor.(string)
+			remoteYml, _ := yaml.Marshal(allRemoteMonitors[monitorName])
+			color.Red(string(remoteYml))
+		}
+	}
 }
 
 func init() {
-	RootCmd.AddCommand(diff)
+	rootCmd.AddCommand(diff)
 }

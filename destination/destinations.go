@@ -17,7 +17,7 @@ const FileName = "destinations.yaml"
 
 func GetLocal(rootDir string) (map[string]string, error) {
 	destinations := make(map[string]string)
-	destinationsPath := filepath.Join(rootDir, "destinations.yml")
+	destinationsPath := filepath.Join(rootDir, FileName)
 	if _, err := os.Stat(destinationsPath); os.IsNotExist(err) {
 		return nil, errors.Wrap(err, "destinations.yml doesn't exist")
 	}
@@ -57,7 +57,7 @@ func Sync(rootDir string, config es.Config) (map[string]string, error) {
 			// Improve using gJson , if more complex operation required
 			id := hit.(map[string]interface{})["_id"].(string)
 			name := hit.(map[string]interface{})["_source"].(map[string]interface{})["destination"].(map[string]interface{})["name"].(string)
-			name = strings.ReplaceAll(name, " ", "_")
+			name = strings.ToLower(strings.ReplaceAll(name, " ", "_"))
 			remoteDestinations[name] = id
 		}
 	}

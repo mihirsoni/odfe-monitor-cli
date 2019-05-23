@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetAllRemote This functions will pull all the monitors from ES cluster
+// GetAllRemote will pull all the monitors from ES cluster
 func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[string]Monitor, mapset.Set, error) {
 	var (
 		allMonitors          []Monitor
@@ -59,7 +59,7 @@ func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[stri
 	return allRemoteMonitorsMap, remoteMonitorsSet, nil
 }
 
-// Prepare This func modify the object to populate correct IDs
+// Prepare will modify the monitor to populate correct IDs
 func Prepare(localMonitor Monitor,
 	remoteMonitor Monitor,
 	destinationsMap map[string]string,
@@ -73,9 +73,7 @@ func Prepare(localMonitor Monitor,
 			remoteTriggers[remoteTrigger.Name] = remoteTrigger
 		}
 	}
-
 	//Update trigger if already existed
-	// TODO::Same with Actions once released
 	for index := range monitorToUpdate.Triggers {
 		// Assume all triggers are new
 		monitorToUpdate.Triggers[index].ID = ""
@@ -92,10 +90,13 @@ func Prepare(localMonitor Monitor,
 		}
 		for k := range monitorToUpdate.Triggers[index].Actions {
 			monitorToUpdate.Triggers[index].Actions[k].ID = ""
-			destinationID := destinationsMap[monitorToUpdate.Triggers[index].Actions[k].DestinationID]
+			destinationName := monitorToUpdate.Triggers[index].Actions[k].DestinationID
+			destinationID := destinationsMap[destinationName]
 			if destinationID == "" {
 				return monitorToUpdate,
-					errors.New("Destination specified doesn't exist in config file, verify it")
+					errors.New("Specified destination " + destinationName +
+						" in monitor " + monitorToUpdate.Name +
+						" doesn't exist in destinations list, sync destinations using sync --destination")
 			}
 			monitorToUpdate.Triggers[index].Actions[k].DestinationID = destinationID
 			//Update action Id for existing action instead of creating new
@@ -107,7 +108,7 @@ func Prepare(localMonitor Monitor,
 	return monitorToUpdate, nil
 }
 
-// Run Run monitor using execute API
+// Run will execute monitor
 func Run(config es.Config, monitor Monitor, ch chan<- error) {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
@@ -150,14 +151,13 @@ func Run(config es.Config, monitor Monitor, ch chan<- error) {
 	ch <- nil
 }
 
-// Update This func will update existing monitor
+// Update will modify existing monitor
 func Update(config es.Config, remoteMonitor Monitor, monitor Monitor, ch chan<- error) {
 	requestBody, err := json.Marshal(monitor)
-	// verbose fmt.Printf("%+v\n", monitor)
 	if err != nil {
 		ch <- errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
-	_, err = es.MakeRequest(http.MethodPut,
+	resp, err := es.MakeRequest(http.MethodPut,
 		config.URL+"_opendistro/_alerting/monitors/"+remoteMonitor.id+
 			"?if_seq_no="+remoteMonitor.seqNo+
 			"&if_primary_term="+remoteMonitor.primaryTerm,
@@ -166,21 +166,45 @@ func Update(config es.Config, remoteMonitor Monitor, monitor Monitor, ch chan<- 
 	if err != nil {
 		ch <- errors.Wrap(err, "Unable to update monitor "+monitor.Name)
 	}
+	if resp.Status != 200 {
+		indentJSON, _ := json.MarshalIndent(resp.Data, "", "\t")
+		ch <- errors.New("Unable to update monitor" + monitor.Name + " " + string(indentJSON))
+	}
 	ch <- nil
 }
 
-// Create This func will create new Monitor
+// Create will create new monitor
 func Create(config es.Config, monitor Monitor, ch chan<- error) {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
 		ch <- errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
-	_, err = es.MakeRequest(http.MethodPost,
+	resp, err := es.MakeRequest(http.MethodPost,
 		config.URL+"_opendistro/_alerting/monitors/",
 		requestBody,
 		getCommonHeaders(config))
 	if err != nil {
 		ch <- errors.Wrap(err, "Unable to create new Monitor")
+	}
+	if resp.Status != 201 {
+		indentJSON, _ := json.MarshalIndent(resp.Data, "", "\t")
+		ch <- errors.New("Unable to create monitor " + monitor.Name + string(indentJSON))
+	}
+	ch <- nil
+}
+
+// Delete delete un-tracked monitor
+func Delete(config es.Config, monitor Monitor, ch chan<- error) {
+	var requestBody []byte
+	resp, err := es.MakeRequest(http.MethodDelete,
+		config.URL+"_opendistro/_alerting/monitors/"+monitor.id,
+		requestBody,
+		getCommonHeaders(config))
+	if err != nil {
+		ch <- errors.Wrap(err, "Unable to delete a monitor "+monitor.Name)
+	}
+	if resp.Status != 200 {
+		ch <- errors.New("Unable to delete monitor" + monitor.Name + " ")
 	}
 	ch <- nil
 }
