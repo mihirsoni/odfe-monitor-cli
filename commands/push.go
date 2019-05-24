@@ -5,6 +5,7 @@ import (
 
 	"../destination"
 	"../monitor"
+	"../utils"
 	mapset "github.com/deckarep/golang-set"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -17,7 +18,17 @@ var push = &cobra.Command{
 	Run:   runPush,
 }
 
+const (
+	DEFAULT_LIMIT = 20
+)
+
 var deleteUnTracked bool
+
+func init() {
+	push.Flags().BoolVar(&deleteUnTracked, "delete", false, "delete un-tracked monitors from remote es cluster")
+	rootCmd.AddCommand(push)
+
+}
 
 func runPush(cmd *cobra.Command, args []string) {
 	destinations, err := destination.GetLocal(rootDir)
@@ -53,7 +64,6 @@ func runPush(cmd *cobra.Command, args []string) {
 
 	var preparedMonitors map[string]monitor.Monitor
 	preparedMonitors = make(map[string]monitor.Monitor)
-	// RunAll monitor before making update to ensure they're valid
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		monitorName := currentMonitor.(string)
 		modifiedMonitor, err := monitor.Prepare(localMonitors[monitorName],
@@ -63,13 +73,15 @@ func runPush(cmd *cobra.Command, args []string) {
 		check(err)
 		preparedMonitors[monitorName] = modifiedMonitor
 	}
+	// RunAll monitor before making update to ensure they're valid
+	// All of these operations are sequential. Run, Modify, Create, Delete
 	runMonitors(monitorsToBeUpdated, preparedMonitors)
 	if shouldUpdate {
 		log.Debug("Monitors to be updated in remote ", modifiedMonitors)
 		updateMonitors(modifiedMonitors, remoteMonitors, preparedMonitors)
 	}
 	if shouldCreate {
-		log.Debug("Monitors to be created in remote", unTrackedMonitors)
+		log.Debug("Monitors to be created in remote", cliNewMonitors)
 		createMonitors(cliNewMonitors, preparedMonitors)
 	}
 	if shouldDelete {
@@ -83,77 +95,68 @@ func updateMonitors(
 	remoteMonitors map[string]monitor.Monitor,
 	preparedMonitors map[string]monitor.Monitor) {
 
-	updateMonitorCh := make(chan error)
+	limiter := utils.NewLimiter(DEFAULT_LIMIT)
+	successfulUpdates := 0
 	for newMonitor := range updateMonitors.Iterator().C {
 		monitorName := newMonitor.(string)
-		go monitor.Update(Config, remoteMonitors[monitorName], preparedMonitors[monitorName], updateMonitorCh)
+		limiter.Execute(func() {
+			log.Debug("Updating monitor: ", monitorName)
+			err := monitor.Update(Config, remoteMonitors[monitorName], preparedMonitors[monitorName])
+			if err == nil {
+				successfulUpdates++
+			} else {
+				log.Debug(err)
+			}
+		})
 	}
-	successfulUpdates := 0
-	for range updateMonitors.Iterator().C {
-		err := <-updateMonitorCh
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			successfulUpdates++
-		}
-	}
+	limiter.Wait()
 	log.Print("Updated " + strconv.Itoa(successfulUpdates) + "/" + strconv.Itoa(updateMonitors.Cardinality()) + " monitors")
 }
 
 func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.Monitor) {
-	createMonitorCh := make(chan error)
+	limiter := utils.NewLimiter(DEFAULT_LIMIT)
+	successfullCreate := 0
 	for newMonitor := range newMonitors.Iterator().C {
 		monitorName := newMonitor.(string)
-		go monitor.Create(Config, preparedMonitors[monitorName], createMonitorCh)
+		limiter.Execute(func() {
+			log.Debug("Creating monitor: ", monitorName)
+			err := monitor.Create(Config, preparedMonitors[monitorName])
+			if err == nil {
+				successfullCreate++
+			} else {
+				log.Debug(err)
+			}
+		})
 	}
-	successfulUpdates := 0
-	for range newMonitors.Iterator().C {
-
-		err := <-createMonitorCh
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			successfulUpdates++
-		}
-	}
-	log.Print("Created " + strconv.Itoa(successfulUpdates) + "/" + strconv.Itoa(newMonitors.Cardinality()) + " monitors")
+	limiter.Wait()
+	log.Print("Created " + strconv.Itoa(successfullCreate+1) + "/" + strconv.Itoa(newMonitors.Cardinality()) + " monitors")
 }
 
 func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]monitor.Monitor) {
-	// RunAll monitor before making update to ensure they're valid
-	runChan := make(chan error)
+	limiter := utils.NewLimiter(DEFAULT_LIMIT)
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		monitorName := currentMonitor.(string)
-		go monitor.Run(Config, preparedMonitors[monitorName], runChan)
+		limiter.Execute(func() {
+			log.Debug("Running monitor: ", monitorName)
+			err := monitor.Run(Config, preparedMonitors[monitorName])
+			check(err)
+		})
 	}
-	for range monitorsToBeUpdated.Iterator().C {
-		err := <-runChan
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	limiter.Wait()
 }
 
 func deleteMonitors(monitorsToBeDeleted mapset.Set, remoteMonitors map[string]monitor.Monitor) {
-	chDeleteMonitor := make(chan error)
+	limiter := utils.NewLimiter(DEFAULT_LIMIT)
+	successfulDelete := 0
 	for currentMonitor := range monitorsToBeDeleted.Iterator().C {
 		monitorName := currentMonitor.(string)
-		go monitor.Delete(Config, remoteMonitors[monitorName], chDeleteMonitor)
+		limiter.Execute(func() {
+			err := monitor.Delete(Config, remoteMonitors[monitorName])
+			if err == nil {
+				successfulDelete++
+			}
+		})
 	}
-	successfulDelete := 0
-	for range monitorsToBeDeleted.Iterator().C {
-		err := <-chDeleteMonitor
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			successfulDelete++
-		}
-	}
-	log.Print("Deleted " + strconv.Itoa(successfulDelete) + "/" + strconv.Itoa(monitorsToBeDeleted.Cardinality()) + " monitors")
-}
-
-func init() {
-	push.Flags().BoolVar(&deleteUnTracked, "delete", false, "delete un-tracked monitors from remote es cluster")
-	rootCmd.AddCommand(push)
-
+	limiter.Wait()
+	log.Print("Deleted " + strconv.Itoa(successfulDelete+1) + "/" + strconv.Itoa(monitorsToBeDeleted.Cardinality()) + " monitors")
 }
