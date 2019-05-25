@@ -40,7 +40,6 @@ func runPush(cmd *cobra.Command, args []string) {
 	}
 	remoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(Config, destinations)
 	check(err)
-
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	cliNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
 	cliManagedMonitors := remoteMonitorsSet.Intersect(localMonitorSet)
@@ -66,12 +65,12 @@ func runPush(cmd *cobra.Command, args []string) {
 	preparedMonitors = make(map[string]monitor.Monitor)
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		monitorName := currentMonitor.(string)
-		modifiedMonitor, err := monitor.Prepare(localMonitors[monitorName],
-			remoteMonitors[monitorName],
+		localMonitor := localMonitors[monitorName]
+		err := localMonitor.Prepare(remoteMonitors[monitorName],
 			destinations,
 			!cliNewMonitors.Contains(monitorName))
 		check(err)
-		preparedMonitors[monitorName] = modifiedMonitor
+		preparedMonitors[monitorName] = localMonitor
 	}
 	// RunAll monitor before making update to ensure they're valid
 	// All of these operations are sequential. Run, Modify, Create, Delete
@@ -101,7 +100,8 @@ func updateMonitors(
 		monitorName := newMonitor.(string)
 		limiter.Execute(func() {
 			log.Debug("Updating monitor: ", monitorName)
-			err := monitor.Update(Config, remoteMonitors[monitorName], preparedMonitors[monitorName])
+			currentMonitor := preparedMonitors[monitorName]
+			err := currentMonitor.Update(Config)
 			if err == nil {
 				successfulUpdates++
 			} else {
@@ -120,7 +120,8 @@ func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.
 		monitorName := newMonitor.(string)
 		limiter.Execute(func() {
 			log.Debug("Creating monitor: ", monitorName)
-			err := monitor.Create(Config, preparedMonitors[monitorName])
+			newMonitor := preparedMonitors[monitorName]
+			err := newMonitor.Create(Config)
 			if err == nil {
 				successfullCreate++
 			} else {
@@ -135,10 +136,11 @@ func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.
 func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]monitor.Monitor) {
 	limiter := utils.NewLimiter(DEFAULT_LIMIT)
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
-		monitorName := currentMonitor.(string)
 		limiter.Execute(func() {
+			monitorName := currentMonitor.(string)
 			log.Debug("Running monitor: ", monitorName)
-			err := monitor.Run(Config, preparedMonitors[monitorName])
+			runMonitor := preparedMonitors[monitorName]
+			err := runMonitor.Run(Config)
 			check(err)
 		})
 	}
@@ -150,8 +152,9 @@ func deleteMonitors(monitorsToBeDeleted mapset.Set, remoteMonitors map[string]mo
 	successfulDelete := 0
 	for currentMonitor := range monitorsToBeDeleted.Iterator().C {
 		monitorName := currentMonitor.(string)
+		remoteMonitor := remoteMonitors[monitorName]
 		limiter.Execute(func() {
-			err := monitor.Delete(Config, remoteMonitors[monitorName])
+			err := remoteMonitor.Delete(Config)
 			if err == nil {
 				successfulDelete++
 			}
