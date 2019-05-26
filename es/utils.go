@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -25,10 +26,14 @@ func init() {
 }
 
 func checkRetry(ctx context.Context, resp *http.Response, err error) (bool, error) {
-	// Handling special bad request of resource creation else relying on default policy
+	// Handling special bad request of resource creation else relying on default policy for 400
+	// Don't retry 400 for all bad request
 	if resp.StatusCode == 400 {
 		var data map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&data)
+		// This is required to reassign the Body as we're reading it. Stream can't be read twice
+		dataByte, _ := json.Marshal(data)
+		resp.Body = ioutil.NopCloser(bytes.NewBuffer(dataByte))
 		var reason string
 		respErr := data["error"].(map[string]interface{})
 		if respErr != nil {

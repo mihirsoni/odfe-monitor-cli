@@ -139,7 +139,6 @@ func (monitor *Monitor) Prepare(
 
 // Run will execute monitor
 func (monitor *Monitor) Run(config es.Config) error {
-
 	requestBody, err := json.Marshal(monitor)
 	// fmt.Println("monitor", string(requestBody))
 	if err != nil {
