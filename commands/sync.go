@@ -19,7 +19,7 @@ var sync = &cobra.Command{
 
 func runSync(cmd *cobra.Command, args []string) {
 	if syncDestinatons {
-		destinations, err := destination.GetRemote(Config)
+		destinations, err := destination.GetRemote(esClient)
 		check(err)
 		writeDestinations(destinations)
 	}

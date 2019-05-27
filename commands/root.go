@@ -3,6 +3,7 @@ package commands
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"../es"
 	log "github.com/sirupsen/logrus"
@@ -13,7 +14,7 @@ import (
 var Verbose bool
 
 // ESConfig holds the for ES configuration
-var Config es.Config
+var esClient es.Client
 
 var esURL string
 var userName string
@@ -49,8 +50,12 @@ func setup() {
 		//Validate URL
 		if IsURL(esURL) {
 			// Validate ES is running?
-			Config = es.Config{URL: esURL, Username: userName, Password: password}
-			resp, err := es.MakeRequest(http.MethodGet, esURL, nil, nil)
+			trailing := strings.HasSuffix(esURL, "/")
+			if trailing {
+				esURL = strings.TrimSuffix(esURL, "/")
+			}
+			esClient = es.Client{URL: esURL, Username: userName, Password: password}
+			resp, err := esClient.MakeRequest(http.MethodGet, "", nil, nil)
 			check(err)
 			if resp.Status != 200 {
 				log.Fatal("Unable to connect to elasticsearch")

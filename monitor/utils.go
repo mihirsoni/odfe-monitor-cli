@@ -4,7 +4,7 @@ import (
 	"../es"
 )
 
-func getCommonHeaders(esConfig es.Config) map[string]string {
+func getCommonHeaders(esClient es.Client) map[string]string {
 	return map[string]string{
 		"Content-Type": "application/json",
 	}

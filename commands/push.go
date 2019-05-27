@@ -34,13 +34,13 @@ func init() {
 }
 
 func runPush(cmd *cobra.Command, args []string) {
-	destinations, err := destination.GetRemote(Config)
+	destinations, err := destination.GetRemote(esClient)
 	check(err)
 	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
 	if err != nil {
 		log.Fatal("Unable to parse monitors from yaml files due to ", err)
 	}
-	remoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(Config, destinations)
+	remoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(esClient, destinations)
 	check(err)
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	cliNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
@@ -112,7 +112,7 @@ func updateMonitors(
 				bar.Increment()
 			}
 			currentMonitor := preparedMonitors[monitorName]
-			err := currentMonitor.Update(Config)
+			err := currentMonitor.Update(esClient)
 			if err == nil {
 				successfulUpdates++
 			} else {
@@ -141,7 +141,7 @@ func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.
 			}
 			log.Debug("Creating monitor: ", monitorName)
 			newMonitor := preparedMonitors[monitorName]
-			err := newMonitor.Create(Config)
+			err := newMonitor.Create(esClient)
 			if err == nil {
 				successfullCreate++
 			} else {
@@ -169,7 +169,7 @@ func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]mon
 			}
 			log.Debug("Running monitor: ", monitorName)
 			runMonitor := preparedMonitors[monitorName]
-			err := runMonitor.Run(Config)
+			err := runMonitor.Run(esClient)
 			check(err)
 		})
 	}
@@ -186,7 +186,7 @@ func deleteMonitors(monitorsToBeDeleted mapset.Set, remoteMonitors map[string]mo
 		monitorName := currentMonitor.(string)
 		remoteMonitor := remoteMonitors[monitorName]
 		limiter.Execute(func() {
-			err := remoteMonitor.Delete(Config)
+			err := remoteMonitor.Delete(esClient)
 			if err == nil {
 				successfulDelete++
 			}

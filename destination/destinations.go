@@ -39,11 +39,11 @@ func getCommonHeaders() map[string]string {
 }
 
 // GetRemote This will get all the monitor and write them into destinations.yaml file on the root directory
-func GetRemote(config es.Config) (map[string]string, error) {
+func GetRemote(esClient es.Client) (map[string]string, error) {
 	// Adding 10k which will not be the case.
 	getAllDestinationQuery := []byte(`{"size": 10000, "query":{ "bool": {"must": { "exists": { "field" : "destination" }}}}}`)
-	resp, err := es.MakeRequest(http.MethodPost,
-		config.URL+"/_search",
+	resp, err := esClient.MakeRequest(http.MethodPost,
+		"/_search",
 		getAllDestinationQuery,
 		getCommonHeaders(),
 	)

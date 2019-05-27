@@ -52,17 +52,17 @@ func checkRetry(ctx context.Context, resp *http.Response, err error) (bool, erro
 }
 
 // MakeRequest initiate request to ES API
-func MakeRequest(method string,
+func (esClient *Client) MakeRequest(method string,
 	endPoint string,
 	body []byte,
 	headers map[string]string) (Response, error) {
 	var response Response
 	var err error
-	req, err := retryablehttp.NewRequest(method, endPoint, bytes.NewBuffer(body))
+	req, err := retryablehttp.NewRequest(method, esClient.URL+endPoint, bytes.NewBuffer(body))
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
-	req.SetBasicAuth("admin", "admin")
+	req.SetBasicAuth(esClient.Username, esClient.Password)
 	doneCh := make(chan bool)
 	go func() {
 		defer close(doneCh)

@@ -11,17 +11,17 @@ import (
 )
 
 // GetAllRemote will pull all the monitors from ES cluster
-func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[string]Monitor, mapset.Set, error) {
+func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[string]Monitor, mapset.Set, error) {
 	var (
 		allMonitors          []Monitor
 		allRemoteMonitorsMap map[string]Monitor
 	)
 	// Since this is very simple call to match all maximum monitors which is 1000 for now
 	byt := []byte(`{"size": 1000, "query":{ "match_all": {}}}`)
-	resp, err := es.MakeRequest(http.MethodPost,
-		config.URL+"_opendistro/_alerting/monitors/_search",
+	resp, err := esClient.MakeRequest(http.MethodPost,
+		"/_opendistro/_alerting/monitors/_search",
 		byt,
-		getCommonHeaders(config))
+		getCommonHeaders(esClient))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error retriving all the monitors")
 	}
@@ -142,16 +142,16 @@ func (monitor *Monitor) Prepare(
 }
 
 // Run will execute monitor
-func (monitor *Monitor) Run(config es.Config) error {
+func (monitor *Monitor) Run(esClient es.Client) error {
 	requestBody, err := json.Marshal(monitor)
 	// fmt.Println("monitor", string(requestBody))
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse monitor correctly")
 	}
-	resp, err := es.MakeRequest(http.MethodPost,
-		config.URL+"_opendistro/_alerting/monitors/_execute?dryrun=true",
+	resp, err := esClient.MakeRequest(http.MethodPost,
+		"/_opendistro/_alerting/monitors/_execute?dryrun=true",
 		requestBody,
-		getCommonHeaders(config))
+		getCommonHeaders(esClient))
 	if err != nil {
 		return errors.Wrap(err, "Unable to execute monitor")
 	}
@@ -186,17 +186,17 @@ func (monitor *Monitor) Run(config es.Config) error {
 }
 
 // Update will modify existing monitor
-func (monitor *Monitor) Update(config es.Config) error {
+func (monitor *Monitor) Update(esClient es.Client) error {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
-	resp, err := es.MakeRequest(http.MethodPut,
-		config.URL+"_opendistro/_alerting/monitors/"+monitor.id+
+	resp, err := esClient.MakeRequest(http.MethodPut,
+		"/_opendistro/_alerting/monitors/"+monitor.id+
 			"?if_seq_no="+monitor.seqNo+
 			"&if_primary_term="+monitor.primaryTerm,
 		requestBody,
-		getCommonHeaders(config))
+		getCommonHeaders(esClient))
 	if err != nil {
 		return errors.Wrap(err, "Unable to update monitor "+monitor.Name)
 	}
@@ -208,15 +208,15 @@ func (monitor *Monitor) Update(config es.Config) error {
 }
 
 // Create will create new monitor
-func (monitor *Monitor) Create(config es.Config) error {
+func (monitor *Monitor) Create(esClient es.Client) error {
 	requestBody, err := json.Marshal(monitor)
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
-	resp, err := es.MakeRequest(http.MethodPost,
-		config.URL+"_opendistro/_alerting/monitors/",
+	resp, err := esClient.MakeRequest(http.MethodPost,
+		"/_opendistro/_alerting/monitors/",
 		requestBody,
-		getCommonHeaders(config))
+		getCommonHeaders(esClient))
 	if err != nil {
 		return errors.Wrap(err, "Unable to create new Monitor")
 	}
@@ -228,12 +228,12 @@ func (monitor *Monitor) Create(config es.Config) error {
 }
 
 // Delete delete a monitor from remote
-func (monitor *Monitor) Delete(config es.Config) error {
+func (monitor *Monitor) Delete(esClient es.Client) error {
 	var requestBody []byte
-	resp, err := es.MakeRequest(http.MethodDelete,
-		config.URL+"_opendistro/_alerting/monitors/"+monitor.id,
+	resp, err := esClient.MakeRequest(http.MethodDelete,
+		"/_opendistro/_alerting/monitors/"+monitor.id,
 		requestBody,
-		getCommonHeaders(config))
+		getCommonHeaders(esClient))
 	if err != nil {
 		return errors.Wrap(err, "Unable to delete a monitor "+monitor.Name)
 	}

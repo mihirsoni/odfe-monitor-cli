@@ -23,7 +23,7 @@ var diff = &cobra.Command{
 var dmp = diffmatchpatch.New()
 
 func showDiff(cmd *cobra.Command, args []string) {
-	destinations, err := destination.GetRemote(Config)
+	destinations, err := destination.GetRemote(esClient)
 	check(err)
 	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
 	check(err)
@@ -31,7 +31,7 @@ func showDiff(cmd *cobra.Command, args []string) {
 		log.Info("There are no monitors")
 		os.Exit(1)
 	}
-	allRemoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(Config, destinations)
+	allRemoteMonitors, remoteMonitorsSet, err := monitor.GetAllRemote(esClient, destinations)
 	check(err)
 	unTrackedMonitors := remoteMonitorsSet.Difference(localMonitorSet)
 	allNewMonitors := localMonitorSet.Difference(remoteMonitorsSet)
