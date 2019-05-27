@@ -20,6 +20,7 @@ var esURL string
 var userName string
 var password string
 var rootDir string
+var odVersion float32
 
 // RootCmd asd
 var rootCmd = &cobra.Command{
@@ -43,6 +44,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().Float32VarP(&odVersion, "od-version", "", 0.9, "opendistro version")
 }
 
 func setup() {
@@ -54,13 +56,12 @@ func setup() {
 			if trailing {
 				esURL = strings.TrimSuffix(esURL, "/")
 			}
-			esClient = es.Client{URL: esURL, Username: userName, Password: password}
+			esClient = es.Client{URL: esURL, Username: userName, Password: password, Version: odVersion}
 			resp, err := esClient.MakeRequest(http.MethodGet, "", nil, nil)
 			check(err)
 			if resp.Status != 200 {
 				log.Fatal("Unable to connect to elasticsearch")
 			}
-
 		} else {
 			log.WithFields(log.Fields{"elasticsearch-url": esURL}).Fatal("Elasticsearch url is invalid")
 		}

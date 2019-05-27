@@ -3,6 +3,7 @@ package monitor
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"../es"
 	"../utils"
@@ -44,9 +45,11 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 		}
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
-		//TODO:: If old version skip the primary term
-		// monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
-		// monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
+		// Old version doesn't have primary term or seq_no
+		if esClient.Version > 0.9 {
+			monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
+			monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
+		}
 		flippedDestinations := utils.ReverseMap(destinationsMap)
 
 		for index := range monitor.Triggers {
@@ -191,10 +194,12 @@ func (monitor *Monitor) Update(esClient es.Client) error {
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
+	endPoint := "/_opendistro/_alerting/monitors/" + monitor.id
+	if esClient.Version > 0.9 {
+		endPoint = endPoint + "?if_seq_no=" + monitor.seqNo + "&if_primary_term=" + monitor.primaryTerm
+	}
 	resp, err := esClient.MakeRequest(http.MethodPut,
-		"/_opendistro/_alerting/monitors/"+monitor.id+
-			"?if_seq_no="+monitor.seqNo+
-			"&if_primary_term="+monitor.primaryTerm,
+		endPoint,
 		requestBody,
 		getCommonHeaders(esClient))
 	if err != nil {
