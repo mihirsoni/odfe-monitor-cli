@@ -23,7 +23,7 @@ var diff = &cobra.Command{
 var dmp = diffmatchpatch.New()
 
 func showDiff(cmd *cobra.Command, args []string) {
-	destinations, err := destination.GetLocal(rootDir)
+	destinations, err := destination.GetRemote(Config)
 	check(err)
 	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
 	check(err)

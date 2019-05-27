@@ -13,11 +13,11 @@ import (
 )
 
 //FILE_NAME where destiantions are stored and read from
-const FileName = "destinations.yaml"
+const FILE_NAME = "destinations.yaml"
 
 func GetLocal(rootDir string) (map[string]string, error) {
 	destinations := make(map[string]string)
-	destinationsPath := filepath.Join(rootDir, FileName)
+	destinationsPath := filepath.Join(rootDir, FILE_NAME)
 	if _, err := os.Stat(destinationsPath); os.IsNotExist(err) {
 		return nil, errors.Wrap(err, "destinations.yml doesn't exist")
 	}
@@ -38,8 +38,8 @@ func getCommonHeaders() map[string]string {
 	}
 }
 
-// Sync This will get all the monitor and write them into destinations.yaml file on the root directory
-func Sync(rootDir string, config es.Config) (map[string]string, error) {
+// GetRemote This will get all the monitor and write them into destinations.yaml file on the root directory
+func GetRemote(config es.Config) (map[string]string, error) {
 	// Adding 10k which will not be the case.
 	getAllDestinationQuery := []byte(`{"size": 10000, "query":{ "bool": {"must": { "exists": { "field" : "destination" }}}}}`)
 	resp, err := es.MakeRequest(http.MethodPost,

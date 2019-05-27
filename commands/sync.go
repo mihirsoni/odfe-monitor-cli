@@ -19,14 +19,14 @@ var sync = &cobra.Command{
 
 func runSync(cmd *cobra.Command, args []string) {
 	if syncDestinatons {
-		destinations, err := destination.Sync(rootDir, Config)
+		destinations, err := destination.GetRemote(Config)
 		check(err)
 		writeDestinations(destinations)
 	}
 }
 
 func writeDestinations(destinations map[string]string) {
-	destinationsPath := filepath.Join(rootDir, destination.FileName)
+	destinationsPath := filepath.Join(rootDir, destination.FILE_NAME)
 	if _, err := os.Stat(destinationsPath); os.IsNotExist(err) {
 		_, err = os.Create(destinationsPath)
 		check(err)

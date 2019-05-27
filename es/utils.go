@@ -3,6 +3,7 @@ package es
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -19,7 +20,11 @@ type Response struct {
 var httpClient *retryablehttp.Client
 
 func init() {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	httpClient = retryablehttp.NewClient()
+	httpClient.HTTPClient.Transport = tr
 	httpClient.RetryWaitMin = 200 * time.Millisecond
 	httpClient.CheckRetry = checkRetry
 	httpClient.Logger = nil
@@ -57,6 +62,7 @@ func MakeRequest(method string,
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
+	req.SetBasicAuth("admin", "admin")
 	doneCh := make(chan bool)
 	go func() {
 		defer close(doneCh)

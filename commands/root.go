@@ -38,7 +38,7 @@ func init() {
 		log.Fatal("Unable to get CWD", err)
 	}
 	rootCmd.PersistentFlags().StringVarP(&rootDir, "rootDir", "r", dir, "root directory where monitors yml files")
-	rootCmd.PersistentFlags().StringVarP(&esURL, "esUrl", "e", "http://localhost:9200/", "URL to connect to Elasticsearch")
+	rootCmd.PersistentFlags().StringVarP(&esURL, "esUrl", "e", "https://localhost:9200/", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")

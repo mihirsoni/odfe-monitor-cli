@@ -3,7 +3,6 @@ package monitor
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"../es"
 	"../utils"
@@ -33,6 +32,10 @@ func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[stri
 		return allRemoteMonitorsMap, remoteMonitorsSet, nil
 	}
 	// Print the ID and document source for each hit.
+	total := resp.Data["hits"].(map[string]interface{})["total"].(float64)
+	if total == 0 {
+		return nil, nil, nil
+	}
 	for _, hit := range resp.Data["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		var monitor Monitor
 		parsedMonitor, err := json.Marshal(hit.(map[string]interface{})["_source"])
@@ -41,8 +44,9 @@ func GetAllRemote(config es.Config, destinationsMap map[string]string) (map[stri
 		}
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
-		monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
-		monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
+		//TODO:: If old version skip the primary term
+		// monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
+		// monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
 		flippedDestinations := utils.ReverseMap(destinationsMap)
 
 		for index := range monitor.Triggers {

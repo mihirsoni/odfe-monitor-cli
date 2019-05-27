@@ -34,9 +34,8 @@ func init() {
 }
 
 func runPush(cmd *cobra.Command, args []string) {
-	destinations, err := destination.GetLocal(rootDir)
+	destinations, err := destination.GetRemote(Config)
 	check(err)
-
 	localMonitors, localMonitorSet, err := monitor.GetAllLocal(rootDir)
 	if err != nil {
 		log.Fatal("Unable to parse monitors from yaml files due to ", err)
@@ -103,8 +102,8 @@ func updateMonitors(
 	successfulUpdates := 0
 	if !Verbose {
 		bar = pb.StartNew(updateMonitors.Cardinality())
+		bar.Prefix("Updating monitors")
 	}
-	bar.Prefix("Updating monitors")
 	for newMonitor := range updateMonitors.Iterator().C {
 		monitorName := newMonitor.(string)
 		limiter.Execute(func() {
@@ -121,6 +120,7 @@ func updateMonitors(
 			}
 		})
 	}
+	limiter.Wait()
 	if !Verbose {
 		bar.Finish()
 	}
