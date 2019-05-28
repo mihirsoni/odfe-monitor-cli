@@ -9,7 +9,7 @@ Excellent question. So many reasons:
 * You can store your monitors in source control so you can track changes (who changed this monitor?), and perform code reviews.
 * Enable through automated pipelines.
 * It is very easy to accidentally make changes to monitors on UI or through API. You can always refer back on this and update existing monitors.
-* You may have multiple stages and would like have monitors running on each stage.
+* You may have multiple stages / regions and would like have monitors running on each stage / region.
 
 ## Installation
 
@@ -22,16 +22,15 @@ For now, after installing you can run the commands to sync your destinations.
 alerting-config-cli sync --destinations
 ```
 
-Above command will create auto-generated destinations file with names and destinationId , so that they're easy to refer inside monitors.
+This command will create auto-generated destinations file with names and destinationId , so that they're easy to refer inside monitors.
 
-### Create new monitor
-
-```
-alerting-config-cli init --new-monitor --name MonitorName
+### Start with existing remote monitors
 
 ```
+alerting-config-cli sync --monitors
+```
 
-This will create new monitor in new file, you can always add multiple monitors in same file ensure it is list.
+This command will create `monitors.yaml` and write them to local files and you can start off managing your monitors.
 
 ### Monitors diff
 
@@ -40,7 +39,7 @@ alerting-config-cli diff
 
 ```
 
-This command will compare your local monitors with remote monitors.
+This command will compare your local monitors with remote monitors and dispaly delta.
 
 ### publish monitors to remote ES
 
