@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"../es"
+	"github.com/mihirsoni/od-alerting-cli/es"
 )
 
 func getCommonHeaders(esClient es.Client) map[string]string {

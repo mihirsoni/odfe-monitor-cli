@@ -1,15 +1,13 @@
 package commands
 
 import (
-	"strconv"
-
-	"../destination"
-	"../monitor"
-	"../utils"
+	mapset "github.com/deckarep/golang-set"
+	"github.com/mihirsoni/od-alerting-cli/destination"
+	"github.com/mihirsoni/od-alerting-cli/monitor"
+	"github.com/mihirsoni/od-alerting-cli/utils"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/cheggaaa/pb.v1"
 
-	mapset "github.com/deckarep/golang-set"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -20,8 +18,9 @@ var push = &cobra.Command{
 	Run:   runPush,
 }
 
+//Default parallel request for cluster
 const (
-	DEFAULT_LIMIT = 20
+	defaultLimit = 20
 )
 
 var deleteUnTracked bool
@@ -76,8 +75,9 @@ func runPush(cmd *cobra.Command, args []string) {
 	}
 	// RunAll monitor before making update to ensure they're valid
 	// All of these operations are sequential. Run, Modify, Create, Delete
-
-	runMonitors(monitorsToBeUpdated, preparedMonitors)
+	if shouldCreate || shouldUpdate {
+		runMonitors(monitorsToBeUpdated, preparedMonitors)
+	}
 	if shouldUpdate {
 		log.Debug("Monitors to be updated in remote ", modifiedMonitors)
 		updateMonitors(modifiedMonitors, remoteMonitors, preparedMonitors)
@@ -98,7 +98,7 @@ func updateMonitors(
 	remoteMonitors map[string]monitor.Monitor,
 	preparedMonitors map[string]monitor.Monitor) {
 
-	limiter := utils.NewLimiter(DEFAULT_LIMIT)
+	limiter := utils.NewLimiter(defaultLimit)
 	successfulUpdates := 0
 	if !Verbose {
 		bar = pb.StartNew(updateMonitors.Cardinality())
@@ -108,15 +108,15 @@ func updateMonitors(
 		monitorName := newMonitor.(string)
 		limiter.Execute(func() {
 			log.Debug("Updating monitor: ", monitorName)
-			if !Verbose {
-				bar.Increment()
-			}
 			currentMonitor := preparedMonitors[monitorName]
 			err := currentMonitor.Update(esClient)
 			if err == nil {
 				successfulUpdates++
 			} else {
 				log.Debug(err)
+			}
+			if !Verbose {
+				bar.Increment()
 			}
 		})
 	}
@@ -127,7 +127,7 @@ func updateMonitors(
 }
 
 func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.Monitor) {
-	limiter := utils.NewLimiter(DEFAULT_LIMIT)
+	limiter := utils.NewLimiter(defaultLimit)
 	successfullCreate := 0
 	if !Verbose {
 		bar = pb.StartNew(newMonitors.Cardinality())
@@ -136,9 +136,6 @@ func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.
 	for newMonitor := range newMonitors.Iterator().C {
 		monitorName := newMonitor.(string)
 		limiter.Execute(func() {
-			if !Verbose {
-				bar.Increment()
-			}
 			log.Debug("Creating monitor: ", monitorName)
 			newMonitor := preparedMonitors[monitorName]
 			err := newMonitor.Create(esClient)
@@ -146,6 +143,9 @@ func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.
 				successfullCreate++
 			} else {
 				log.Debug(err)
+			}
+			if !Verbose {
+				bar.Increment()
 			}
 		})
 	}
@@ -156,7 +156,7 @@ func createMonitors(newMonitors mapset.Set, preparedMonitors map[string]monitor.
 }
 
 func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]monitor.Monitor) {
-	limiter := utils.NewLimiter(DEFAULT_LIMIT)
+	limiter := utils.NewLimiter(defaultLimit)
 	if !Verbose {
 		bar = pb.StartNew(monitorsToBeUpdated.Cardinality())
 		bar.Prefix("Running monitors")
@@ -164,13 +164,13 @@ func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]mon
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
 		limiter.Execute(func() {
 			monitorName := currentMonitor.(string)
-			if !Verbose {
-				bar.Increment()
-			}
 			log.Debug("Running monitor: ", monitorName)
 			runMonitor := preparedMonitors[monitorName]
 			err := runMonitor.Run(esClient)
 			check(err)
+			if !Verbose {
+				bar.Increment()
+			}
 		})
 	}
 	limiter.Wait()
@@ -180,8 +180,12 @@ func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]mon
 }
 
 func deleteMonitors(monitorsToBeDeleted mapset.Set, remoteMonitors map[string]monitor.Monitor) {
-	limiter := utils.NewLimiter(DEFAULT_LIMIT)
+	limiter := utils.NewLimiter(defaultLimit)
 	successfulDelete := 0
+	if !Verbose {
+		bar = pb.StartNew(monitorsToBeDeleted.Cardinality())
+		bar.Prefix("Deleting monitors")
+	}
 	for currentMonitor := range monitorsToBeDeleted.Iterator().C {
 		monitorName := currentMonitor.(string)
 		remoteMonitor := remoteMonitors[monitorName]
@@ -190,8 +194,13 @@ func deleteMonitors(monitorsToBeDeleted mapset.Set, remoteMonitors map[string]mo
 			if err == nil {
 				successfulDelete++
 			}
+			if !Verbose {
+				bar.Increment()
+			}
 		})
 	}
 	limiter.Wait()
-	log.Print("Deleted " + strconv.Itoa(successfulDelete+1) + "/" + strconv.Itoa(monitorsToBeDeleted.Cardinality()) + " monitors")
+	if !Verbose {
+		bar.Finish()
+	}
 }

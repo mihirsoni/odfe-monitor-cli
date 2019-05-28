@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"../destination"
-	"../monitor"
+	"github.com/mihirsoni/od-alerting-cli/destination"
+	"github.com/mihirsoni/od-alerting-cli/monitor"
+
 	mapset "github.com/deckarep/golang-set"
 	"github.com/fatih/color"
 	"github.com/sergi/go-diff/diffmatchpatch"

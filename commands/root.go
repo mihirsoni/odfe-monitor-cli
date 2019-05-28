@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"../es"
+	"github.com/mihirsoni/od-alerting-cli/es"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +20,7 @@ var esURL string
 var userName string
 var password string
 var rootDir string
-var odVersion float32
+var odVersion int
 
 // RootCmd asd
 var rootCmd = &cobra.Command{
@@ -44,13 +44,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().Float32VarP(&odVersion, "od-version", "", 0.9, "opendistro version")
+	rootCmd.PersistentFlags().IntVarP(&odVersion, "od-version", "", 0, "opendistro version")
 }
 
 func setup() {
 	if esURL != "" {
 		//Validate URL
-		if IsURL(esURL) {
+		if isURL(esURL) {
 			// Validate ES is running?
 			trailing := strings.HasSuffix(esURL, "/")
 			if trailing {

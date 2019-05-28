@@ -3,7 +3,7 @@ package commands
 import (
 	"net/url"
 
-	"../monitor"
+	"github.com/mihirsoni/od-alerting-cli/monitor"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -24,7 +24,7 @@ func isMonitorChanged(localMonitor monitor.Monitor, remoteMonitor monitor.Monito
 	return false
 }
 
-func IsURL(str string) bool {
+func isURL(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && u.Scheme != "" && u.Host != ""
 }

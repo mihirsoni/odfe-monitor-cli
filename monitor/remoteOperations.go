@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"../es"
-	"../utils"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/mihirsoni/od-alerting-cli/es"
+	"github.com/mihirsoni/od-alerting-cli/utils"
 	"github.com/pkg/errors"
 )
 
@@ -32,11 +32,6 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 		// No monitors exists so no index exists, returning empty and will create new monitors
 		return allRemoteMonitorsMap, remoteMonitorsSet, nil
 	}
-	// Print the ID and document source for each hit.
-	total := resp.Data["hits"].(map[string]interface{})["total"].(float64)
-	if total == 0 {
-		return nil, nil, nil
-	}
 	for _, hit := range resp.Data["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		var monitor Monitor
 		parsedMonitor, err := json.Marshal(hit.(map[string]interface{})["_source"])
@@ -46,7 +41,7 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
 		// Old version doesn't have primary term or seq_no
-		if esClient.Version > 0.9 {
+		if esClient.Version > 0 {
 			monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
 			monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
 		}
@@ -195,7 +190,7 @@ func (monitor *Monitor) Update(esClient es.Client) error {
 		return errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
 	endPoint := "/_opendistro/_alerting/monitors/" + monitor.id
-	if esClient.Version > 0.9 {
+	if esClient.Version > 0 {
 		endPoint = endPoint + "?if_seq_no=" + monitor.seqNo + "&if_primary_term=" + monitor.primaryTerm
 	}
 	resp, err := esClient.MakeRequest(http.MethodPut,

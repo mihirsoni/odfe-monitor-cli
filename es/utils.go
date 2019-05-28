@@ -20,6 +20,7 @@ type Response struct {
 var httpClient *retryablehttp.Client
 
 func init() {
+	//TODO:: Enable custom certification verification
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -62,7 +63,10 @@ func (esClient *Client) MakeRequest(method string,
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
-	req.SetBasicAuth(esClient.Username, esClient.Password)
+	//Username and password can not be blank, if blank skip
+	if esClient.Username != "" && esClient.Password != "" {
+		req.SetBasicAuth(esClient.Username, esClient.Password)
+	}
 	doneCh := make(chan bool)
 	go func() {
 		defer close(doneCh)

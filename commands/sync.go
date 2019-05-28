@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"../destination"
-	"../monitor"
+	"github.com/mihirsoni/od-alerting-cli/destination"
+	"github.com/mihirsoni/od-alerting-cli/monitor"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -14,8 +14,8 @@ var syncDestinatons bool
 var syncMonitors bool
 var sync = &cobra.Command{
 	Use:   "sync [Flags]",
-	Short: "sync operation",
-	Long:  `This command will fetch all the destinations from ES cluster and write them into a local file`,
+	Short: "lets you sync monitors and destinations from remote to local",
+	Long:  `This command will fetch all the destinations from ES cluster and write them into a local file in CWD`,
 	Run:   runSync,
 }
 
@@ -65,6 +65,6 @@ func writeMonitors(monitors map[string]monitor.Monitor) {
 
 func init() {
 	sync.Flags().BoolVarP(&syncDestinatons, "destinations", "d", false, "sync all destinations from ES and write destinations.yml file")
-	sync.Flags().BoolVarP(&syncMonitors, "monitors", "m", false, "sync all monitors from ES and write monitors.yml helpful to hav start of from your existing monitors")
+	sync.Flags().BoolVarP(&syncMonitors, "monitors", "m", false, "sync all monitors from ES and write monitors.yml. Helpful to start from your existing monitors")
 	rootCmd.AddCommand(sync)
 }

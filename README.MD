@@ -13,6 +13,8 @@ Excellent question. So many reasons:
 
 ## Installation
 
+Download the distributions from [here]()
+
 ## Getting Started
 
 Currently, this CLI doesn't support how the destinations are managed. This will be supported in up-coming versions.
@@ -50,6 +52,7 @@ Publish local monitors to remote elasticsearch cluster:
   you edit an existing monitor in Kibana alerting or by any other way)
 - This cli will not delete anything from remote you will need to add `--delete` flag to delete untracked monitors
 
+
 Sample monitor
 
 ```
@@ -75,7 +78,15 @@ Sample monitor
       condition: "return true"
       actions:
         - name: Sample Action
-          destinationId: test_my_destination
+          destinationId: test_my_destination #This destination should be avialble in destinations.yaml file otherwise it will not work.
           subject:'Error'
           message: 'There is an error'
 ```
+
+##Note
+
+
+## ToDO
+
+* Add support of providing validation against custom TLS certificate.
+* Support AWS Elasticsearch
