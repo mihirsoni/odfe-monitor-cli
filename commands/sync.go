@@ -13,7 +13,7 @@ import (
 var syncDestinatons bool
 var syncMonitors bool
 var sync = &cobra.Command{
-	Use:   "sync [Flags]",
+	Use:   "sync",
 	Short: "lets you sync monitors and destinations from remote to local",
 	Long:  `This command will fetch all the destinations from ES cluster and write them into a local file in CWD`,
 	Run:   runSync,

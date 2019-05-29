@@ -12,7 +12,7 @@ import (
 )
 
 var push = &cobra.Command{
-	Use:   "push [Options]",
+	Use:   "push",
 	Short: "push all changed to remote Elasticsearch",
 	Long:  `This command will push all the updated changes to elasticsearch cluster. Be careful on while passing --delete flag , there is no way to bring them back unless you've snapshot`,
 	Run:   runPush,
@@ -24,11 +24,13 @@ const (
 )
 
 var deleteUnTracked bool
+var dryRun bool
 
 var bar *pb.ProgressBar
 
 func init() {
 	push.Flags().BoolVar(&deleteUnTracked, "delete", false, "delete un-tracked monitors from remote es cluster")
+	push.Flags().BoolVar(&dryRun, "dryRun", true, "Dry run monitor more detailed https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/api/#run-monitor")
 	rootCmd.AddCommand(push)
 }
 
@@ -166,7 +168,7 @@ func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]mon
 			monitorName := currentMonitor.(string)
 			log.Debug("Running monitor: ", monitorName)
 			runMonitor := preparedMonitors[monitorName]
-			err := runMonitor.Run(esClient)
+			err := runMonitor.Run(esClient, dryRun)
 			check(err)
 			if !Verbose {
 				bar.Increment()

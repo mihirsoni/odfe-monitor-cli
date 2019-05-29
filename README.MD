@@ -47,6 +47,7 @@ This command will compare your local monitors with remote monitors and dispaly d
 
 Publish local monitors to remote elasticsearch cluster:
 
+- will run, validate updated / new monitors
 - will create new monitors
 - will update existing monitors (so it could override what you were doing if
   you edit an existing monitor in Kibana alerting or by any other way)
@@ -85,8 +86,10 @@ Sample monitor
 
 ##Note
 
+* You might see the diff in queries after pushing new monitors, this could be because Alerting uses ESQuery builder,which adds some defaults to improve the query. Currently only solution is to adhere to remote query and update yaml file manually. You could currently do this with either `diff` and applying diff.
 
 ## ToDO
 
 * Add support of providing validation against custom TLS certificate.
 * Support AWS Elasticsearch
+*
