@@ -56,7 +56,7 @@ func setup() {
 			resp, err := esClient.MakeRequest(http.MethodGet, "", nil, nil)
 			check(err)
 			if resp.Status != 200 {
-				log.Fatal("Unable to connect to elasticsearch")
+				log.Fatal("Unable to connect to elasticsearch", resp)
 			}
 		} else {
 			log.WithFields(log.Fields{"elasticsearch-url": esURL}).Fatal("Elasticsearch url is invalid")
@@ -73,6 +73,7 @@ func setup() {
 	}
 }
 
+//Execute initiate the program and let cobra handles the CLI
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)

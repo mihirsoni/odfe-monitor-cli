@@ -32,6 +32,9 @@ func init() {
 }
 
 func checkRetry(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	if resp == nil {
+		return false, nil
+	}
 	// Handling special bad request of resource creation else relying on default policy for 400
 	// Don't retry 400 for all bad request
 	if resp.StatusCode == 400 {
