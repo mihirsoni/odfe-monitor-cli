@@ -3,7 +3,7 @@ package commands
 import (
 	"net/url"
 
-	"github.com/mihirsoni/od-alerting-cli/monitor"
+	"github.com/mihirsoni/odfe-alerting/monitor"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )

@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	mapset "github.com/deckarep/golang-set"
-	"github.com/mihirsoni/od-alerting-cli/es"
-	"github.com/mihirsoni/od-alerting-cli/utils"
+	"github.com/mihirsoni/odfe-alerting/es"
+	"github.com/mihirsoni/odfe-alerting/utils"
 	"github.com/pkg/errors"
 )
 

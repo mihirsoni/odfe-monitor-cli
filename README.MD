@@ -1,4 +1,4 @@
-# OD Alerting CLI
+# Open Distro for Elasticsearch Alerting CLI
 
 Alerting CLI enables to manage and organize [Elasticsearch Alerting monitors](https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/) through YAML file.
 
@@ -103,11 +103,13 @@ Sample monitor
             - Period end: {{ctx.periodEnd}}
 ```
 
-##Note
+## Note
 
 * You might see the diff in queries after pushing new monitors, this could be because Alerting uses ESQuery builder,which adds some defaults to improve the query. Currently only solution is to adhere to remote query and update yaml file manually. You could currently do this with either `diff` and applying diff.
 
-## ToDO
+## TODO
 * Add support of providing validation against custom TLS certificate.
-* Support AWS Elasticsearch
-* Find a way to avoid defaults ?
+* Support AWS Elasticsearch. Need to integrated request signer
+* Find a way to avoid defaults difference in query?
+* Manage destination from CLI.
+* Add unit test cases

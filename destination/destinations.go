@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mihirsoni/od-alerting-cli/es"
+	"github.com/mihirsoni/odfe-alerting/es"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
