@@ -4,5 +4,5 @@ type Client struct {
 	URL      string
 	Username string
 	Password string
-	Version  float32
+	Version  int
 }

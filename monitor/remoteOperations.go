@@ -142,14 +142,14 @@ func (monitor *Monitor) Prepare(
 }
 
 // Run will execute monitor
-func (monitor *Monitor) Run(esClient es.Client) error {
+func (monitor *Monitor) Run(esClient es.Client, dryRun bool) error {
 	requestBody, err := json.Marshal(monitor)
 	// fmt.Println("monitor", string(requestBody))
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse monitor correctly")
 	}
 	resp, err := esClient.MakeRequest(http.MethodPost,
-		"/_opendistro/_alerting/monitors/_execute?dryrun=true",
+		"/_opendistro/_alerting/monitors/_execute?dryrun="+strconv.FormatBool(dryRun),
 		requestBody,
 		getCommonHeaders(esClient))
 	if err != nil {

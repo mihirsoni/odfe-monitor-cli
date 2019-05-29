@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./commands"
+	"github.com/mihirsoni/od-alerting-cli/commands"
 )
 
 func main() {
