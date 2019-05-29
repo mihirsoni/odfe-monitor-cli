@@ -67,7 +67,6 @@ type Monitor struct {
 	seqNo       string // Required for Update
 	id          string
 	Name        string    `json:"name"`
-	Type        string    `json:"type"`
 	Enabled     bool      `json:"enabled"`
 	Schedule    Schedule  `json:"schedule"`
 	Inputs      []Search  `json:"inputs"`

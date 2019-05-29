@@ -13,7 +13,12 @@ Excellent question. So many reasons:
 
 ## Installation
 
-Download the distributions from [here]()
+Go to release and downall
+```
+go install github.com/mihirsoni/odfe-alerting
+```
+
+If your $GOPATH/bin is in your PATH, you can simply: use `odfe-alerting --help`
 
 ## Getting Started
 
@@ -21,7 +26,7 @@ Currently, this CLI doesn't support how the destinations are managed. This will 
 For now, after installing you can run the commands to sync your destinations.
 
 ```
-alerting-config-cli sync --destinations
+odfe-alerting sync --destinations
 ```
 
 This command will create auto-generated destinations file with names and destinationId , so that they're easy to refer inside monitors.
@@ -29,7 +34,7 @@ This command will create auto-generated destinations file with names and destina
 ### Start with existing remote monitors
 
 ```
-alerting-config-cli sync --monitors
+odfe-alerting sync --monitors
 ```
 
 This command will create `monitors.yaml` and write them to local files and you can start off managing your monitors.
@@ -37,7 +42,7 @@ This command will create `monitors.yaml` and write them to local files and you c
 ### Monitors diff
 
 ```
-alerting-config-cli diff
+odfe-alerting diff
 ```
 
 This command will compare your local monitors with remote monitors and display delta.

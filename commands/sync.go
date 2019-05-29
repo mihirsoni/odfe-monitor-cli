@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -16,7 +17,15 @@ var sync = &cobra.Command{
 	Use:   "sync",
 	Short: "lets you sync monitors and destinations from remote to local",
 	Long:  `This command will fetch all the destinations from ES cluster and write them into a local file in CWD`,
+	Args:  validateArgs,
 	Run:   runSync,
+}
+
+func validateArgs(cmd *cobra.Command, args []string) error {
+	if syncDestinatons || syncMonitors {
+		return nil
+	}
+	return errors.New("Provide what to sync monitors or destinations ?  ")
 }
 
 func init() {
