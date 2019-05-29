@@ -52,9 +52,11 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 			monitor.Triggers[index].YCondition = monitor.Triggers[index].Condition.Script.Source
 			// flip DestinationsId
 			for k := range monitor.Triggers[index].Actions {
-				destintionName := flippedDestinations[monitor.Triggers[index].Actions[k].DestinationID]
+				destinationID := monitor.Triggers[index].Actions[k].DestinationID
+				destintionName := flippedDestinations[destinationID]
 				if destintionName == "" {
-					return nil, nil, errors.New("Remote monitor selected destination doesn't exists locally, please update destinations list if out of sync")
+					return nil, nil, errors.New("Invalid destination" + destinationID + " in monitor " +
+						monitor.Name + ".If out of sync update using --sync --destination or update")
 				}
 				monitor.Triggers[index].Actions[k].Subject = monitor.Triggers[index].Actions[k].SubjectTemplate.Source
 				monitor.Triggers[index].Actions[k].Message = monitor.Triggers[index].Actions[k].MessageTemplate.Source
@@ -103,7 +105,7 @@ func (monitor *Monitor) Prepare(
 				Lang:   "painless",
 			},
 		}
-		// Update destinationId and actioinId
+		// Update destinationId and actionID
 		remoteActions := make(map[string]Action)
 		if isUpdate == true {
 			for _, remoteAction := range remoteTriggers[monitor.Triggers[index].Name].Actions {

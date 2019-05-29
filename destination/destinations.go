@@ -12,22 +12,23 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//FILE_NAME where destiantions are stored and read from
-const FILE_NAME = "destinations.yaml"
+//FileName where destinations are stored and read from
+const FileName = "destinations.yaml"
 
+//GetLocal Parse local destinations
 func GetLocal(rootDir string) (map[string]string, error) {
 	destinations := make(map[string]string)
-	destinationsPath := filepath.Join(rootDir, FILE_NAME)
+	destinationsPath := filepath.Join(rootDir, FileName)
 	if _, err := os.Stat(destinationsPath); os.IsNotExist(err) {
-		return nil, errors.Wrap(err, "destinations.yml doesn't exist")
+		return nil, errors.Wrap(err, FileName+"doesn't exist")
 	}
 	yamlFile, err := ioutil.ReadFile(destinationsPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to read destinations file")
+		return nil, errors.Wrap(err, "Unable to read"+FileName)
 	}
 	yaml.Unmarshal(yamlFile, &destinations)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to parse destinations file , invalid yml ?")
+		return nil, errors.Wrap(err, "Unable to parse "+FileName)
 	}
 	return destinations, nil
 }
@@ -48,7 +49,7 @@ func GetRemote(esClient es.Client) (map[string]string, error) {
 		getCommonHeaders(),
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to fetch destinations")
+		return nil, errors.Wrap(err, "Unable to fetch destinations from elasticsearch")
 	}
 	var remoteDestinations = make(map[string]string)
 

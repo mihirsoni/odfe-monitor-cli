@@ -8,6 +8,7 @@ type Search struct {
 	} `json:"search"`
 }
 
+//Trigger define a Trigger struct
 type Trigger struct {
 	ID       string `json:"id,omitempty" yaml:"-"`
 	Name     string `json:"name"`
@@ -18,19 +19,19 @@ type Trigger struct {
 	Actions    []Action  `json:"actions,omitempty"`
 }
 
-// Period hello
+// Period Define monitor with period
 type Period struct {
 	Interval int    `json:"interval"`
 	Unit     string `json:"unit"`
 }
 
-// Cron hello
+// Cron Define monitor with Cron
 type Cron struct {
 	Expression string `json:"expression"`
 	Timezone   string `json:"timezone"`
 }
 
-// Schedule world
+// Schedule type of Monitor (Cron / Period)
 type Schedule struct {
 	Period *Period `json:"period,omitempty"`
 	Cron   *Cron   `json:"cron,omitempty"`
@@ -49,15 +50,18 @@ type Action struct {
 	MessageTemplate Script `json:"message_template" yaml:"-"`
 }
 
+//Script Works for mustache and painless
 type Script struct {
 	Source string `json:"source"`
 	Lang   string `json:"lang"`
 }
+
+//Condition define condition for the triggers
 type Condition struct {
 	Script Script `json:"script"`
 }
 
-// Monitor nice
+// Monitor Alert monitor object
 type Monitor struct {
 	primaryTerm string // Required for Update
 	seqNo       string // Required for Update

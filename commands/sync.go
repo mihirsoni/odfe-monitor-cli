@@ -19,6 +19,12 @@ var sync = &cobra.Command{
 	Run:   runSync,
 }
 
+func init() {
+	sync.Flags().BoolVarP(&syncDestinatons, "destinations", "d", false, "sync all destinations from ES and write destinations.yml file")
+	sync.Flags().BoolVarP(&syncMonitors, "monitors", "m", false, "sync all monitors from ES and write monitors.yml. Helpful to start from your existing monitors")
+	rootCmd.AddCommand(sync)
+}
+
 func runSync(cmd *cobra.Command, args []string) {
 	destinations, err := destination.GetRemote(esClient)
 	check(err)
@@ -32,7 +38,7 @@ func runSync(cmd *cobra.Command, args []string) {
 }
 
 func writeDestinations(destinations map[string]string) {
-	destinationsPath := filepath.Join(rootDir, destination.FILE_NAME)
+	destinationsPath := filepath.Join(rootDir, destination.FileName)
 	if _, err := os.Stat(destinationsPath); os.IsNotExist(err) {
 		_, err = os.Create(destinationsPath)
 		check(err)
@@ -61,10 +67,4 @@ func writeMonitors(monitors map[string]monitor.Monitor) {
 	data, err := yaml.Marshal(monitorsList)
 	check(err)
 	file.Write(data)
-}
-
-func init() {
-	sync.Flags().BoolVarP(&syncDestinatons, "destinations", "d", false, "sync all destinations from ES and write destinations.yml file")
-	sync.Flags().BoolVarP(&syncMonitors, "monitors", "m", false, "sync all monitors from ES and write monitors.yml. Helpful to start from your existing monitors")
-	rootCmd.AddCommand(sync)
 }

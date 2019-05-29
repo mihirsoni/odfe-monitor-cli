@@ -10,6 +10,7 @@ import (
 	"gopkg.in/mihirsoni/yaml.v2"
 )
 
+//GetAllLocal Parse all local monitors under rootDir
 func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 	var monitorsMap map[string]Monitor
 	var allLocalMonitors []Monitor
@@ -36,11 +37,11 @@ func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 		var yamlFile []byte
 		yamlFile, err = ioutil.ReadFile(file)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "Unable to read monitor file "+file)
+			return nil, nil, errors.Wrap(err, "Unable to read "+file)
 		}
 		err = yaml.Unmarshal(yamlFile, &allLocalMonitors)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "Unable to parse monitor "+file)
+			return nil, nil, errors.Wrap(err, "Unable to parse "+file)
 		}
 		for _, localMonitor := range allLocalMonitors {
 			if monitorsSet.Contains(localMonitor.Name) {

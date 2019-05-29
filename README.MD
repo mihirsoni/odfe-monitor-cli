@@ -1,6 +1,6 @@
 # OD Alerting CLI
 
-Alerting CLI enables to manage and organize Elasticsearch Alerting monitors through YAML file.
+Alerting CLI enables to manage and organize [Elasticsearch Alerting monitors](https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/) through YAML file.
 
 ## Why would I want to manage my monitors in YAML files?
 
@@ -38,20 +38,18 @@ This command will create `monitors.yaml` and write them to local files and you c
 
 ```
 alerting-config-cli diff
-
 ```
 
-This command will compare your local monitors with remote monitors and dispaly delta.
+This command will compare your local monitors with remote monitors and display delta.
 
 ### publish monitors to remote ES
 
 Publish local monitors to remote elasticsearch cluster:
 
 - will run, validate updated / new monitors
+- will update existing monitors (so it could override what you were doing if you edit an existing monitor in Kibana alerting or by any other way)
 - will create new monitors
-- will update existing monitors (so it could override what you were doing if
-  you edit an existing monitor in Kibana alerting or by any other way)
-- This cli will not delete anything from remote you will need to add `--delete` flag to delete untracked monitors
+- will not delete any monitors from remote. You will need to provide `--delete` flag to delete all un-tracked monitors. (Be careful)
 
 
 Sample monitor
@@ -66,8 +64,9 @@ Sample monitor
   enabled: true
   inputs:
     - search:
-        indices: ["log*"]
-        query: # This is valid Elasticsearch query
+        indices:
+          - log*
+        query: # This block should be valid Elasticsearch query
           size: 0
           query:
             match_all: {
@@ -76,12 +75,32 @@ Sample monitor
   triggers:
     - name: '500'
       severity: '2'
-      condition: "return true"
+      condition: | #This is how you can create multiline strings
+        // Performs some crude custom scoring and returns true if that score exceeds a certain value
+        int score = 0;
+        for (int i = 0; i < ctx.results[0].hits.hits.length; i++) {
+          // Weighs 500 errors 10 times as heavily as 503 errors
+          if (ctx.results[0].hits.hits[i]._source.http_status_code == "500") {
+            score += 10;
+          } else if (ctx.results[0].hits.hits[i]._source.http_status_code == "503") {
+            score += 1;
+          }
+        }
+        if (score > 99) {
+          return true;
+        } else {
+          return true;
+        }
       actions:
         - name: Sample Action
-          destinationId: test_my_destination #This destination should be avialble in destinations.yaml file otherwise it will not work.
-          subject:'Error'
-          message: 'There is an error'
+          destinationId: test_my_destination #This destination should be available in destinations.yaml file otherwise it will throw an error.
+          subject:'There is an error'
+          message: |
+            Monitor {{ctx.monitor.name}} just entered an alert state. Please investigate the issue.
+            - Trigger: {{ctx.trigger.name}}
+            - Severity: {{ctx.trigger.severity}}
+            - Period start: {{ctx.periodStart}}
+            - Period end: {{ctx.periodEnd}}
 ```
 
 ##Note
@@ -89,7 +108,6 @@ Sample monitor
 * You might see the diff in queries after pushing new monitors, this could be because Alerting uses ESQuery builder,which adds some defaults to improve the query. Currently only solution is to adhere to remote query and update yaml file manually. You could currently do this with either `diff` and applying diff.
 
 ## ToDO
-
 * Add support of providing validation against custom TLS certificate.
 * Support AWS Elasticsearch
-*
+* Find a way to avoid defaults ?

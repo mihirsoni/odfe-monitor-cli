@@ -51,7 +51,7 @@ func showDiff(cmd *cobra.Command, args []string) {
 	hasCreated := allNewMonitors.Cardinality() > 0
 	//All New Monitors
 	if hasCreated {
-		log.Debug("New monitors", allNewMonitors)
+		log.Debug("New monitors to be publushed", allNewMonitors)
 		fmt.Println("---------------------------------------------------------")
 		fmt.Println(" These monitors are currently missing in alerting ")
 		fmt.Println("---------------------------------------------------------")
@@ -63,7 +63,7 @@ func showDiff(cmd *cobra.Command, args []string) {
 	}
 
 	if hasModified {
-		log.Debug("Common monitors", allCommonMonitors)
+		log.Debug("Common monitors to be updated", allCommonMonitors)
 		fmt.Println("---------------------------------------------------------")
 		fmt.Println(" These are existing monitors, which have been modified ")
 		fmt.Println("---------------------------------------------------------")
@@ -79,7 +79,7 @@ func showDiff(cmd *cobra.Command, args []string) {
 		}
 	}
 	if hasDeleted {
-		log.Debug("Un tracked monitors", unTrackedMonitors)
+		log.Debug("Un tracked monitors to be deleted", unTrackedMonitors)
 		fmt.Println("---------------------------------------------------------")
 		fmt.Println(" These monitors will be deleted if push with the --delete flag")
 		fmt.Println("---------------------------------------------------------")

@@ -44,7 +44,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().IntVarP(&odVersion, "od-version", "", 0, "opendistro version")
+	rootCmd.PersistentFlags().IntVarP(&odVersion, "odVersion", "", 0, "opendistro version")
 }
 
 func setup() {
