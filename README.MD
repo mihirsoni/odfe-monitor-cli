@@ -13,12 +13,25 @@ Excellent question. So many reasons:
 
 ## Installation
 
-Go to release and downall
+## Installation
+
+From source:
+
 ```
-go install github.com/mihirsoni/odfe-alerting
+$ go get github.com/mihirsoni/odfe-alerting/
 ```
 
-If your $GOPATH/bin is in your PATH, you can simply: use `odfe-alerting --help`
+From binary to `./bin/odfe-alerting`:
+
+```
+$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-alerting/master/godownloader.sh | bash
+```
+
+From binary to `/usr/local/bin/odfe-alerting`:
+
+```
+$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-alerting/master/godownloader.sh | bash -s -- -b /usr/local/bin
+```
 
 ## Getting Started
 
