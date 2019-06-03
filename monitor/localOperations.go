@@ -12,8 +12,6 @@ import (
 
 //GetAllLocal Parse all local monitors under rootDir
 func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
-	var monitorsMap map[string]Monitor
-	var allLocalMonitors []Monitor
 	var files []string
 	var err error
 	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
@@ -23,7 +21,8 @@ func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 		if info.Name() == "destinations.yml" || info.Name() == "destinations.yaml" || info.IsDir() {
 			return nil
 		}
-		if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".yml" {
+		ext := filepath.Ext(path)
+		if ext == ".yaml" || ext == ".yml" {
 			files = append(files, path)
 		}
 		return nil
@@ -32,10 +31,10 @@ func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 		return nil, nil, errors.Wrap(err, "Unable to collect all files")
 	}
 	monitorsSet := mapset.NewSet()
-	monitorsMap = make(map[string]Monitor)
+	monitorsMap := make(map[string]Monitor)
 	for _, file := range files {
-		var yamlFile []byte
-		yamlFile, err = ioutil.ReadFile(file)
+		var allLocalMonitors []Monitor
+		yamlFile, err := ioutil.ReadFile(file)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "Unable to read "+file)
 		}
@@ -45,7 +44,7 @@ func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 		}
 		for _, localMonitor := range allLocalMonitors {
 			if monitorsSet.Contains(localMonitor.Name) {
-				return nil, nil, errors.New("Duplicate monitor found " + localMonitor.Name + " already exists")
+				return nil, nil, errors.New("Duplicate monitor found. " + localMonitor.Name + " already exists")
 			}
 			monitorsSet.Add(localMonitor.Name)
 			monitorsMap[localMonitor.Name] = localMonitor

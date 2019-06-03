@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -36,7 +37,7 @@ func init() {
 		log.Fatal("Unable to get CWD", err)
 	}
 	rootCmd.PersistentFlags().StringVarP(&rootDir, "rootDir", "r", dir, "root directory where monitors yml files")
-	rootCmd.PersistentFlags().StringVarP(&esURL, "esUrl", "e", "https://localhost:9200/", "URL to connect to Elasticsearch")
+	rootCmd.PersistentFlags().StringVarP(&esURL, "esUrl", "e", "http://localhost:9200/", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "URL to connect to Elasticsearch")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
@@ -52,11 +53,12 @@ func setup() {
 			if trailing {
 				esURL = strings.TrimSuffix(esURL, "/")
 			}
-			esClient = es.Client{URL: esURL, Username: userName, Password: password, Version: odVersion}
+			esClient = es.Client{URL: esURL, Username: userName, Password: password, OdVersion: odVersion}
 			resp, err := esClient.MakeRequest(http.MethodGet, "", nil, nil)
+			indentJSON, _ := json.MarshalIndent(resp, "", "\t")
 			check(err)
 			if resp.Status != 200 {
-				log.Fatal("Unable to connect to elasticsearch", resp)
+				log.Fatal("Unable to connect to elasticsearch \n", string(indentJSON))
 			}
 		} else {
 			log.WithFields(log.Fields{"elasticsearch-url": esURL}).Fatal("Elasticsearch url is invalid")

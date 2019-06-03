@@ -62,13 +62,15 @@ This command will compare your local monitors with remote monitors and display d
 
 ### publish monitors to remote ES
 
+```
+odfe-alerting push --submit
+```
+
 Publish local monitors to remote elasticsearch cluster:
 
 - will run, validate updated / new monitors
-- will update existing monitors (so it could override what you were doing if you edit an existing monitor in Kibana alerting or by any other way)
-- will create new monitors
-- will not delete any monitors from remote. You will need to provide `--delete` flag to delete all un-tracked monitors. (Be careful)
-
+- will create new  / update existing monitors if `--submit` flag is added(so it could override what you were doing if you edit an existing monitor in Kibana alerting or by any other way)
+- will not delete any monitors from remote. You will need to provide `--delete` along with `--submit` flag to delete all un-tracked monitors. (Be careful) This can't be undo.
 
 Sample monitor
 

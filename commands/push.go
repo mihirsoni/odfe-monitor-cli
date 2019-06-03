@@ -14,7 +14,7 @@ import (
 var push = &cobra.Command{
 	Use:   "push",
 	Short: "push all changed to remote Elasticsearch",
-	Long:  `This command will push all the updated changes to elasticsearch cluster. Be careful on while passing --delete flag , there is no way to bring them back unless you've snapshot`,
+	Long:  `This command will push all the updated changes to elasticsearch cluster. Be careful on while passing --delete flag, there is no way to bring them back unless you've snapshot`,
 	Run:   runPush,
 }
 
@@ -25,12 +25,14 @@ const (
 
 var deleteUnTracked bool
 var dryRun bool
+var submit bool
 
 var bar *pb.ProgressBar
 
 func init() {
 	push.Flags().BoolVar(&deleteUnTracked, "delete", false, "delete un-tracked monitors from remote es cluster")
 	push.Flags().BoolVar(&dryRun, "dryRun", true, "Dry run monitor more detailed https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/api/#run-monitor")
+	push.Flags().BoolVar(&submit, "submit", false, "Actually publish monitors to remote")
 	rootCmd.AddCommand(push)
 }
 
@@ -71,7 +73,7 @@ func runPush(cmd *cobra.Command, args []string) {
 		localMonitor := localMonitors[monitorName]
 		err := localMonitor.Prepare(remoteMonitors[monitorName],
 			destinations,
-			!cliNewMonitors.Contains(monitorName))
+			!cliNewMonitors.Contains(monitorName), esClient.OdVersion)
 		check(err)
 		preparedMonitors[monitorName] = localMonitor
 	}
@@ -79,6 +81,10 @@ func runPush(cmd *cobra.Command, args []string) {
 	// All of these operations are sequential. Run, Modify, Create, Delete
 	if shouldCreate || shouldUpdate {
 		runMonitors(monitorsToBeUpdated, preparedMonitors)
+		if !submit {
+			log.Info("Use --submit argument to publish monitors")
+			return
+		}
 	}
 	if shouldUpdate {
 		log.Debug("Monitors to be updated in remote ", modifiedMonitors)

@@ -13,10 +13,6 @@ import (
 
 // GetAllRemote will pull all the monitors from ES cluster
 func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[string]Monitor, mapset.Set, error) {
-	var (
-		allMonitors          []Monitor
-		allRemoteMonitorsMap map[string]Monitor
-	)
 	// Since this is very simple call to match all maximum monitors which is 1000 for now
 	byt := []byte(`{"size": 1000, "query":{ "match_all": {}}}`)
 	resp, err := esClient.MakeRequest(http.MethodPost,
@@ -26,8 +22,10 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error retriving all the monitors")
 	}
-	allRemoteMonitorsMap = make(map[string]Monitor)
+	allRemoteMonitorsMap := make(map[string]Monitor)
 	remoteMonitorsSet := mapset.NewSet()
+	// Reversed map for destinations
+	flippedDestinations := utils.ReverseMap(destinationsMap)
 	if resp.Status == 404 {
 		// No monitors exists so no index exists, returning empty and will create new monitors
 		return allRemoteMonitorsMap, remoteMonitorsSet, nil
@@ -41,33 +39,27 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 		json.Unmarshal(parsedMonitor, &monitor)
 		monitor.id = hit.(map[string]interface{})["_id"].(string)
 		// Old version doesn't have primary term or seq_no
-		if esClient.Version > 0 {
+		if esClient.OdVersion > 0 {
 			monitor.primaryTerm = strconv.FormatFloat(hit.(map[string]interface{})["_primary_term"].(float64), 'f', 0, 64)
 			monitor.seqNo = strconv.FormatFloat(hit.(map[string]interface{})["_seq_no"].(float64), 'f', 0, 64)
 		}
-		flippedDestinations := utils.ReverseMap(destinationsMap)
-
 		for index := range monitor.Triggers {
 			//Modify the condition
 			monitor.Triggers[index].YCondition = monitor.Triggers[index].Condition.Script.Source
-			// flip DestinationsId
 			for k := range monitor.Triggers[index].Actions {
 				destinationID := monitor.Triggers[index].Actions[k].DestinationID
 				destintionName := flippedDestinations[destinationID]
 				if destintionName == "" {
 					return nil, nil, errors.New("Invalid destination" + destinationID + " in monitor " +
-						monitor.Name + ".If out of sync update using --sync --destination or update")
+						monitor.Name + ".If out of sync update using odfe-alerting sync --destination or update")
 				}
 				monitor.Triggers[index].Actions[k].Subject = monitor.Triggers[index].Actions[k].SubjectTemplate.Source
 				monitor.Triggers[index].Actions[k].Message = monitor.Triggers[index].Actions[k].MessageTemplate.Source
 				monitor.Triggers[index].Actions[k].DestinationID = destintionName
 			}
 		}
-		allMonitors = append(allMonitors, monitor)
-	}
-	for _, remoteMonitor := range allMonitors {
-		remoteMonitorsSet.Add(remoteMonitor.Name)
-		allRemoteMonitorsMap[remoteMonitor.Name] = remoteMonitor
+		remoteMonitorsSet.Add(monitor.Name)
+		allRemoteMonitorsMap[monitor.Name] = monitor
 	}
 	return allRemoteMonitorsMap, remoteMonitorsSet, nil
 }
@@ -76,7 +68,8 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 func (monitor *Monitor) Prepare(
 	remoteMonitor Monitor,
 	destinationsMap map[string]string,
-	isUpdate bool) error {
+	isUpdate bool,
+	odVersion int) error {
 
 	monitor.seqNo = remoteMonitor.seqNo
 	monitor.primaryTerm = remoteMonitor.primaryTerm
@@ -131,8 +124,8 @@ func (monitor *Monitor) Prepare(
 				Source: currentAction.Message,
 				Lang:   "mustache",
 			}
-			//Update action Id for existing action instead of creating new
-			if remoteAction, ok := remoteActions[currentAction.Name]; ok && isUpdate {
+			//Update action Id for 7.0+ for existing action instead of creating new
+			if remoteAction, ok := remoteActions[currentAction.Name]; ok && isUpdate && odVersion > 0 {
 				currentAction.ID = remoteAction.ID
 			}
 			monitor.Triggers[index].Actions[k] = currentAction
@@ -192,7 +185,7 @@ func (monitor *Monitor) Update(esClient es.Client) error {
 		return errors.Wrap(err, "Unable to parse monitor Object "+monitor.Name)
 	}
 	endPoint := "/_opendistro/_alerting/monitors/" + monitor.id
-	if esClient.Version > 0 {
+	if esClient.OdVersion > 0 {
 		endPoint = endPoint + "?if_seq_no=" + monitor.seqNo + "&if_primary_term=" + monitor.primaryTerm
 	}
 	resp, err := esClient.MakeRequest(http.MethodPut,

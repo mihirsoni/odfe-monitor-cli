@@ -1,8 +1,8 @@
 package es
 
 type Client struct {
-	URL      string
-	Username string
-	Password string
-	Version  int
+	URL       string
+	Username  string
+	Password  string
+	OdVersion int
 }

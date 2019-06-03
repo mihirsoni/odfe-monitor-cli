@@ -63,8 +63,10 @@ func (esClient *Client) MakeRequest(method string,
 	var response Response
 	var err error
 	req, err := retryablehttp.NewRequest(method, esClient.URL+endPoint, bytes.NewBuffer(body))
-	for key, value := range headers {
-		req.Header.Set(key, value)
+	if headers != nil {
+		for key, value := range headers {
+			req.Header.Set(key, value)
+		}
 	}
 	//Username and password can not be blank, if blank skip
 	if esClient.Username != "" && esClient.Password != "" {
