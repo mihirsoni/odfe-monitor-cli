@@ -34,5 +34,3 @@ release:
   github:
     owner: mihirsoni
     name: odfe-alerting
-  prerelease: true
-  draft: true
