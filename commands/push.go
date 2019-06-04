@@ -13,8 +13,8 @@ import (
 
 var push = &cobra.Command{
 	Use:   "push",
-	Short: "push all changed to remote Elasticsearch",
-	Long:  `This command will push all the updated changes to elasticsearch cluster. Be careful on while passing --delete flag, there is no way to bring them back unless you've snapshot`,
+	Short: "Publish all changed to remote Elasticsearch",
+	Long:  `This command will push all modification to elasticsearch cluster. Be careful on while passing --delete flag, there is no way to bring them back unless you've snapshot`,
 	Run:   runPush,
 }
 
@@ -30,9 +30,9 @@ var submit bool
 var bar *pb.ProgressBar
 
 func init() {
-	push.Flags().BoolVar(&deleteUnTracked, "delete", false, "delete un-tracked monitors from remote es cluster")
+	push.Flags().BoolVar(&deleteUnTracked, "delete", false, "Delete un-tracked monitors from remote es cluster")
 	push.Flags().BoolVar(&dryRun, "dryRun", true, "Dry run monitor more detailed https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/api/#run-monitor")
-	push.Flags().BoolVar(&submit, "submit", false, "Actually publish monitors to remote")
+	push.Flags().BoolVar(&submit, "submit", false, "Publish monitors to remote")
 	rootCmd.AddCommand(push)
 }
 
@@ -91,11 +91,11 @@ func runPush(cmd *cobra.Command, args []string) {
 		updateMonitors(modifiedMonitors, remoteMonitors, preparedMonitors)
 	}
 	if shouldCreate {
-		log.Debug("Monitors to be created in remote", cliNewMonitors)
+		log.Debug("Monitors to be created in remote ", cliNewMonitors)
 		createMonitors(cliNewMonitors, preparedMonitors)
 	}
 	if shouldDelete {
-		log.Debug("Monitors to be deleted from remote", unTrackedMonitors)
+		log.Debug("Monitors to be deleted from remote ", unTrackedMonitors)
 		deleteMonitors(unTrackedMonitors, remoteMonitors)
 	}
 	log.Info("Done")
@@ -170,8 +170,8 @@ func runMonitors(monitorsToBeUpdated mapset.Set, preparedMonitors map[string]mon
 		bar.Prefix("Running monitors")
 	}
 	for currentMonitor := range monitorsToBeUpdated.Iterator().C {
+		monitorName := currentMonitor.(string)
 		limiter.Execute(func() {
-			monitorName := currentMonitor.(string)
 			log.Debug("Running monitor: ", monitorName)
 			runMonitor := preparedMonitors[monitorName]
 			err := runMonitor.Run(esClient, dryRun)

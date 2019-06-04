@@ -17,8 +17,8 @@ import (
 
 var diff = &cobra.Command{
 	Use:   "diff",
-	Short: "delta between local and remote monitors",
-	Long:  `This command will print delta between local and remote monitors.`,
+	Short: "Show changes between remote and local monitors",
+	Long:  `This command will show difference between remote and local monitors.`,
 	Run:   showDiff,
 }
 var dmp = diffmatchpatch.New()
@@ -79,7 +79,7 @@ func showDiff(cmd *cobra.Command, args []string) {
 		}
 	}
 	if hasDeleted {
-		log.Debug("Un tracked monitors to be deleted", unTrackedMonitors)
+		log.Debug("Un-tracked monitors to be deleted", unTrackedMonitors)
 		fmt.Println("---------------------------------------------------------")
 		fmt.Println(" These monitors will be deleted if push with the --delete flag")
 		fmt.Println("---------------------------------------------------------")

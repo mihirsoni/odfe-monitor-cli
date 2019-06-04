@@ -29,8 +29,8 @@ func validateArgs(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	sync.Flags().BoolVarP(&syncDestinatons, "destinations", "d", false, "sync all destinations from ES and write destinations.yml file")
-	sync.Flags().BoolVarP(&syncMonitors, "monitors", "m", false, "sync all monitors from ES and write monitors.yml. Helpful to start from your existing monitors")
+	sync.Flags().BoolVarP(&syncDestinatons, "destinations", "d", false, "Sync all destinations from ES and write destinations.yml file")
+	sync.Flags().BoolVarP(&syncMonitors, "monitors", "m", false, "Sync all monitors from ES and write monitors.yml. Helpful to start from your existing monitors")
 	rootCmd.AddCommand(sync)
 }
 

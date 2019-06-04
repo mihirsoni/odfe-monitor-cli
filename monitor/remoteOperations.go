@@ -137,7 +137,6 @@ func (monitor *Monitor) Prepare(
 // Run will execute monitor
 func (monitor *Monitor) Run(esClient es.Client, dryRun bool) error {
 	requestBody, err := json.Marshal(monitor)
-	// fmt.Println("monitor", string(requestBody))
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse monitor correctly")
 	}
@@ -146,7 +145,7 @@ func (monitor *Monitor) Run(esClient es.Client, dryRun bool) error {
 		requestBody,
 		getCommonHeaders(esClient))
 	if err != nil {
-		return errors.Wrap(err, "Unable to execute monitor")
+		return errors.Wrap(err, "Unable to execute monitor "+monitor.Name)
 	}
 
 	monitorError, _ := resp.Data["error"].(map[string]interface{})
@@ -157,7 +156,7 @@ func (monitor *Monitor) Run(esClient es.Client, dryRun bool) error {
 	}
 	executionResult, err := json.Marshal(resp.Data["trigger_results"].(map[string]interface{}))
 	if err != nil {
-		return errors.Wrap(err, "Unable to parse run monitor response")
+		return errors.Wrap(err, "Unable to parse response for monitor "+monitor.Name)
 	}
 	var triggersResult interface{}
 	json.Unmarshal(executionResult, &triggersResult)
@@ -172,7 +171,7 @@ func (monitor *Monitor) Run(esClient es.Client, dryRun bool) error {
 		json.Unmarshal(parsedResultSet, &runResult)
 		if runResult["error"] != nil {
 			indentJSON, _ := json.MarshalIndent(runResult, "", "\t")
-			return errors.New(string(indentJSON))
+			return errors.New("Error executing monitor " + monitor.Name + "\n" + string(indentJSON))
 		}
 	}
 	return nil

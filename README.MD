@@ -33,8 +33,11 @@ $ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-alerting/master/god
 
 ## Getting Started
 
+
 Currently, this CLI doesn't support how the destinations are managed. This will be supported in up-coming versions.
 For now, after installing you can run the commands to sync your destinations.
+
+### Sync
 
 ```
 odfe-alerting sync --destinations
@@ -42,23 +45,21 @@ odfe-alerting sync --destinations
 
 This command will create auto-generated destinations file with names and destinationId , so that they're easy to refer inside monitors.
 
-### Start with existing remote monitors
-
 ```
 odfe-alerting sync --monitors
 ```
 
-This command will create `monitors.yaml` and write them to local files and you can start off managing your monitors.
+This command will create `monitors.yaml` and write remote monitors to local files and you can start off managing your monitors.
 
-### Monitors diff
+### Diff
 
 ```
 odfe-alerting diff
 ```
 
-This command will compare your local monitors with remote monitors and display delta.
+This command will show difference between remote and local monitors.
 
-### Publish monitors to remote ES
+### Push
 
 ```
 odfe-alerting -e https://localhost:9200 -u admin -p admin -r your/yaml/files/ push --submit
