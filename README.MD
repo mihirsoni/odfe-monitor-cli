@@ -13,8 +13,6 @@ Excellent question. So many reasons:
 
 ## Installation
 
-## Installation
-
 From source:
 
 ```
@@ -60,17 +58,17 @@ odfe-alerting diff
 
 This command will compare your local monitors with remote monitors and display delta.
 
-### publish monitors to remote ES
+### Publish monitors to remote ES
 
 ```
-odfe-alerting push --submit
+odfe-alerting -e https://localhost:9200 -u admin -p admin -r your/yaml/files/ push --submit
 ```
 
-Publish local monitors to remote elasticsearch cluster:
+Publish local monitors to remote Elasticsearch cluster:
 
-- will run, validate updated / new monitors
-- will create new  / update existing monitors if `--submit` flag is added(so it could override what you were doing if you edit an existing monitor in Kibana alerting or by any other way)
-- will not delete any monitors from remote. You will need to provide `--delete` along with `--submit` flag to delete all un-tracked monitors. (Be careful) This can't be undo.
+- will run and validate updated/new monitors.
+- will create new monitors and update existing monitors if `--submit` flag is added. This flag could override your changes if you edited an existing monitor in Kibana (or by any other way).
+- will not delete any monitors from remote. You must provide `--delete` along with `--submit` to delete all untracked monitors. Be careful---this can't be undone.
 
 Sample monitor
 
@@ -114,7 +112,7 @@ Sample monitor
       actions:
         - name: Sample Action
           destinationId: test_my_destination #This destination should be available in destinations.yaml file otherwise it will throw an error.
-          subject:'There is an error'
+          subject: 'There is an error'
           message: |
             Monitor {{ctx.monitor.name}} just entered an alert state. Please investigate the issue.
             - Trigger: {{ctx.trigger.name}}
@@ -128,6 +126,7 @@ Sample monitor
 * You might see the diff in queries after pushing new monitors, this could be because Alerting uses ESQuery builder,which adds some defaults to improve the query. Currently only solution is to adhere to remote query and update yaml file manually. You could currently do this with either `diff` and applying diff.
 
 ## TODO
+
 * Add support of providing validation against custom TLS certificate.
 * Support AWS Elasticsearch. Need to integrated request signer
 * Find a way to avoid defaults difference in query?
