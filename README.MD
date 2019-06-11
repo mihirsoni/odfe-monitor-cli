@@ -1,6 +1,6 @@
 # OpenDistro for Elasticsearch Alerting CLI
 
-Alerting CLI enables to manage and organize [Elasticsearch Alerting monitors](https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/) through YAML file.
+odfe-monitor-cli enables you to manage and organize [Elasticsearch Alerting monitors](https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/) through YAML file.
 
 ## Why would I want to manage my monitors in YAML files?
 
