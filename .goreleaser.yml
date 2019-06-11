@@ -4,7 +4,7 @@ before:
   hooks:
 builds:
   - main: main.go
-    binary: odfe-alerting
+    binary: odfe-monitor-cli
     goos:
       - darwin
       - linux
@@ -33,4 +33,4 @@ changelog:
 release:
   github:
     owner: mihirsoni
-    name: odfe-alerting
+    name: odfe-monitor-cli

@@ -16,19 +16,19 @@ Excellent question. So many reasons:
 From source:
 
 ```
-$ go get github.com/mihirsoni/odfe-alerting/
+$ go get github.com/mihirsoni/odfe-monitor-cli/
 ```
 
-From binary to `./bin/odfe-alerting`:
+From binary to `./bin/odfe-monitor-cli`:
 
 ```
-$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-alerting/master/godownloader.sh | bash
+$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-monitor-cli/master/godownloader.sh | bash
 ```
 
-From binary to `/usr/local/bin/odfe-alerting`:
+From binary to `/usr/local/bin/odfe-monitor-cli`:
 
 ```
-$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-alerting/master/godownloader.sh | bash -s -- -b /usr/local/bin
+$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-monitor-cli/master/godownloader.sh | bash -s -- -b /usr/local/bin
 ```
 
 ## Getting Started
@@ -40,13 +40,13 @@ For now, after installing you can run the commands to sync your destinations.
 ### Sync
 
 ```
-odfe-alerting sync --destinations
+odfe-monitor-cli sync --destinations
 ```
 
 This command will create auto-generated destinations file with names and destinationId , so that they're easy to refer inside monitors.
 
 ```
-odfe-alerting sync --monitors
+odfe-monitor-cli sync --monitors
 ```
 
 This command will create `monitors.yaml` and write remote monitors to local files and you can start off managing your monitors.
@@ -54,7 +54,7 @@ This command will create `monitors.yaml` and write remote monitors to local file
 ### Diff
 
 ```
-odfe-alerting diff
+odfe-monitor-cli diff
 ```
 
 This command will show difference between remote and local monitors.
@@ -62,7 +62,7 @@ This command will show difference between remote and local monitors.
 ### Push
 
 ```
-odfe-alerting -e https://localhost:9200 -u admin -p admin -r your/yaml/files/ push --submit
+odfe-monitor-cli -e https://localhost:9200 -u admin -p admin -r your/yaml/files/ push --submit
 ```
 
 Publish local monitors to remote Elasticsearch cluster:

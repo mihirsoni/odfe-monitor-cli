@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mihirsoni/odfe-alerting/es"
+	"github.com/mihirsoni/odfe-monitor-cli/es"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -25,7 +25,7 @@ var odVersion int
 
 // RootCmd asd
 var rootCmd = &cobra.Command{
-	Use:   "odfe-alerting",
+	Use:   "odfe-monitor-cli",
 	Short: "Manage opendistro alerting monitors",
 	Long:  `This application will help you to manage the Opendistro alerting monitors using YAML files.`,
 }

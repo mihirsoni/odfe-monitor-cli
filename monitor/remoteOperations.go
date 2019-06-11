@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	mapset "github.com/deckarep/golang-set"
-	"github.com/mihirsoni/odfe-alerting/es"
-	"github.com/mihirsoni/odfe-alerting/utils"
+	"github.com/mihirsoni/odfe-monitor-cli/es"
+	"github.com/mihirsoni/odfe-monitor-cli/utils"
 	"github.com/pkg/errors"
 )
 
@@ -51,7 +51,7 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[st
 				destintionName := flippedDestinations[destinationID]
 				if destintionName == "" {
 					return nil, nil, errors.New("Invalid destination" + destinationID + " in monitor " +
-						monitor.Name + ".If out of sync update using odfe-alerting sync --destination or update")
+						monitor.Name + ".If out of sync update using odfe-monitor-cli sync --destination or update")
 				}
 				monitor.Triggers[index].Actions[k].Subject = monitor.Triggers[index].Actions[k].SubjectTemplate.Source
 				monitor.Triggers[index].Actions[k].Message = monitor.Triggers[index].Actions[k].MessageTemplate.Source

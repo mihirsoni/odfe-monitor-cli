@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mihirsoni/odfe-alerting/destination"
-	"github.com/mihirsoni/odfe-alerting/monitor"
+	"github.com/mihirsoni/odfe-monitor-cli/destination"
+	"github.com/mihirsoni/odfe-monitor-cli/monitor"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
