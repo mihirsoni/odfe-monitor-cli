@@ -1,4 +1,4 @@
-# Open Distro for Elasticsearch Alerting CLI
+# OpenDistro for Elasticsearch Alerting CLI
 
 Alerting CLI enables to manage and organize [Elasticsearch Alerting monitors](https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/) through YAML file.
 
@@ -73,7 +73,7 @@ Publish local monitors to remote Elasticsearch cluster:
 
 Sample monitor
 
-```
+```yaml
 - name: 'Sample Alerting monitor'
   type: 'monitor'
   schedule:
