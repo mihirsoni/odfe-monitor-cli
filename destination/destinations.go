@@ -14,6 +14,7 @@ import (
 
 //FileName where destinations are stored and read from
 const FileName = "destinations.yaml"
+const indexSearchURL = "/.opendistro-alerting-config/_search"
 
 //GetLocal Parse local destinations
 func GetLocal(rootDir string) (map[string]string, error) {
@@ -44,7 +45,7 @@ func GetRemote(esClient es.Client) (map[string]string, error) {
 	// Adding 10k which will not be the case.
 	getAllDestinationQuery := []byte(`{"size": 10000, "query":{ "bool": {"must": { "exists": { "field" : "destination" }}}}}`)
 	resp, err := esClient.MakeRequest(http.MethodPost,
-		"/_search",
+		indexSearchURL,
 		getAllDestinationQuery,
 		getCommonHeaders(),
 	)
