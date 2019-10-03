@@ -44,10 +44,12 @@ type Action struct {
 	DestinationID string `json:"destination_id,omitempty" yaml:"destinationId"`
 	// Why duplicated Subject and Message ? This is to simplify customer experience on writing new monitors.
 	// Taking input which is important default are being filled by CLI
-	Subject         string `json:"-"`
-	Message         string `json:"-"`
-	SubjectTemplate Script `json:"subject_template" yaml:"-"`
-	MessageTemplate Script `json:"message_template" yaml:"-"`
+	Subject         string   `json:"-"`
+	Message         string   `json:"-"`
+	SubjectTemplate Script   `json:"subject_template" yaml:"-"`
+	MessageTemplate Script   `json:"message_template" yaml:"-"`
+	ThrottleEnabled bool     `json:"throttle_enabled" yaml:"throttleEnabled"`
+	Throttle        Throttle `json:"throttle,omitempty"`
 }
 
 //Script Works for mustache and painless
@@ -59,6 +61,12 @@ type Script struct {
 //Condition define condition for the triggers
 type Condition struct {
 	Script Script `json:"script"`
+}
+
+//Throttle define throttle paremts for actions
+type Throttle struct {
+	Value int64  `json:"value,omitempty"`
+	Unit  string `json:"unit,omitempty"`
 }
 
 // Monitor Alert monitor object
