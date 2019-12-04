@@ -1,0 +1,111 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "vwNjR8772Pqs8z9ZdPFoatNI9Kg=",
+			"path": "github.com/deckarep/golang-set",
+			"revision": "699df6a3acf6867538e50931511e9dc403da108a",
+			"revisionTime": "2018-09-27T02:58:44Z"
+		},
+		{
+			"checksumSHA1": "BxH9xJUqczhpL57gfKZe2/VlBHY=",
+			"path": "github.com/fatih/color",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
+		},
+		{
+			"checksumSHA1": "x3Hz3DwZpIp521DL8nh9FpOQP/4=",
+			"path": "github.com/hashicorp/go-cleanhttp",
+			"revision": "d3fcbee8e1810ecee4bdbf415f42f84cfd0e3361",
+			"revisionTime": "2019-04-06T16:20:18Z"
+		},
+		{
+			"checksumSHA1": "Iv7QhhSWySasqGcwbFyq0XrgYOQ=",
+			"path": "github.com/hashicorp/go-hclog",
+			"revision": "3a6b159e7c8be95d9af1c989e4dcb730567f5c9c",
+			"revisionTime": "2019-08-26T16:23:21Z"
+		},
+		{
+			"checksumSHA1": "+k4vdAi79aeiLourSjYkwVO3UdY=",
+			"path": "github.com/hashicorp/go-retryablehttp",
+			"revision": "46f7ba56794607f00b2e4797b3090b76dff6791e",
+			"revisionTime": "2019-09-30T19:30:22Z"
+		},
+		{
+			"checksumSHA1": "40vJyUB4ezQSn/NSadsKEOrudMc=",
+			"path": "github.com/inconshreveable/mousetrap",
+			"revision": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75",
+			"revisionTime": "2014-10-17T20:07:13Z"
+		},
+		{
+			"checksumSHA1": "XEV3BI3nHA/rNa/tIgB7fVCrDww=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
+		},
+		{
+			"checksumSHA1": "y/A5iuvwjytQE2CqVuphQRXR2nI=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
+		},
+		{
+			"checksumSHA1": "qR7D38Zmn9TPUvGn64k+r0+Kq1c=",
+			"path": "github.com/mattn/go-runewidth",
+			"revision": "703b5e6b11ae25aeb2af9ebb5d5fdf8fa2575211",
+			"revisionTime": "2018-12-18T00:06:49Z"
+		},
+		{
+			"checksumSHA1": "I7hloldMJZTqUx6hbVDp5nk9fZQ=",
+			"path": "github.com/pkg/errors",
+			"revision": "27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7",
+			"revisionTime": "2019-02-27T00:00:51Z"
+		},
+		{
+			"checksumSHA1": "QxBGuFiDP7AZx9/QOwJVVDlHjLM=",
+			"path": "github.com/sergi/go-diff/diffmatchpatch",
+			"revision": "da645544ed44df016359bd4c0e3dc60ee3a0da43",
+			"revisionTime": "2018-02-05T16:33:09Z"
+		},
+		{
+			"checksumSHA1": "4GI/G+nYyCQ3ltASSBIunUr2LYk=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": "de736cf91b921d56253b4010270681d33fdf7cb5",
+			"revisionTime": "2019-08-07T10:34:36Z"
+		},
+		{
+			"checksumSHA1": "Er6hWblE4ZCfFMgndcqDkpwZM7I=",
+			"path": "github.com/spf13/cobra",
+			"revision": "19cf35ea77e5981f8e8b90a897af621f2be864f6",
+			"revisionTime": "2019-09-17T15:02:42Z"
+		},
+		{
+			"checksumSHA1": "ojfUmKmPV01UCwuEl/cT2WAYppw=",
+			"path": "github.com/spf13/pflag",
+			"revision": "2e9d26c8c37aae03e3f9d4e90b7116f5accb7cab",
+			"revisionTime": "2019-09-18T19:59:20Z"
+		},
+		{
+			"checksumSHA1": "DexmxyLf0e868xt6PEc52M/Gpxw=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "b397fe3ad8ed895c98fa54584f61835a88e65ff5",
+			"revisionTime": "2019-10-01T20:21:21Z"
+		},
+		{
+			"checksumSHA1": "musC8ZUOSVMDp952SvSMCD+jsrg=",
+			"path": "gopkg.in/cheggaaa/pb.v1",
+			"revision": "f907f6f5dd81f77c2bbc1cde92e4c5a04720cb11",
+			"revisionTime": "2019-03-01T13:15:20Z"
+		},
+		{
+			"checksumSHA1": "bMRKNLeRgdkWmFZUgO4EbOgOSZw=",
+			"path": "gopkg.in/yaml.v3",
+			"revision": "c8b7dadae55537a6c8367220c0f93d3205869c8a",
+			"revisionTime": "2019-09-24T16:43:51Z"
+		}
+	],
+	"rootPath": "github.com/mihirsoni/odfe-monitor-cli"
+}
