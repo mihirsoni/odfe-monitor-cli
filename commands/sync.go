@@ -48,11 +48,7 @@ func runSync(cmd *cobra.Command, args []string) {
 
 func writeDestinations(destinations map[string]string) {
 	destinationsPath := filepath.Join(rootDir, destination.FileName)
-	if _, err := os.Stat(destinationsPath); os.IsNotExist(err) {
-		_, err = os.Create(destinationsPath)
-		check(err)
-	}
-	file, err := os.OpenFile(destinationsPath, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(destinationsPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	check(err)
 	defer file.Close()
 	data, err := yaml.Marshal(destinations)
@@ -62,11 +58,7 @@ func writeDestinations(destinations map[string]string) {
 
 func writeMonitors(monitors map[string]monitor.Monitor) {
 	destinationsPath := filepath.Join(rootDir, "monitors.yaml")
-	if _, err := os.Stat(destinationsPath); os.IsNotExist(err) {
-		_, err = os.Create(destinationsPath)
-		check(err)
-	}
-	file, err := os.OpenFile(destinationsPath, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(destinationsPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	check(err)
 	defer file.Close()
 	var monitorsList []monitor.Monitor
