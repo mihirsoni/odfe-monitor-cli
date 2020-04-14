@@ -38,8 +38,8 @@ func init() {
 	}
 	rootCmd.PersistentFlags().StringVarP(&rootDir, "rootDir", "r", dir, "Root directory where monitors yml files")
 	rootCmd.PersistentFlags().StringVarP(&esURL, "esUrl", "e", "https://localhost:9200/", "URL to connect to Elasticsearch")
-	rootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "admin", "Username for opendistro Elasticsearch")
-	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "Password for opendistro Elasticsearch")
+	rootCmd.PersistentFlags().StringVarP(&userName, "username", "u", "", "Username for opendistro Elasticsearch")
+	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "", "Password for opendistro Elasticsearch")
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().IntVarP(&odVersion, "odVersion", "", 0, "Major opendistro version")
 }
