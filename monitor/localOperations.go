@@ -48,21 +48,22 @@ func GetAllLocal(rootDir string) (map[string]Monitor, mapset.Set, error) {
 	monitorsSet := mapset.NewSet()
 	monitorsMap := make(map[string]Monitor)
 	for _, file := range files {
-		var monitor Monitor
+		var allLocalMonitors []Monitor
 		yamlFile, err := ioutil.ReadFile(file)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "Unable to read "+file)
 		}
-		err = yaml.Unmarshal(yamlFile, &monitor)
+		err = yaml.Unmarshal(yamlFile, &allLocalMonitors)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "Unable to parse "+file)
 		}
-		if monitorsSet.Contains(monitor.Name) {
-			return nil, nil, errors.New("Duplicate monitor found. " + monitor.Name + " already exists")
+		for _, localMonitor := range allLocalMonitors {
+			if monitorsSet.Contains(localMonitor.Name) {
+				return nil, nil, errors.New("Duplicate monitor found. " + localMonitor.Name + " already exists")
+			}
+			monitorsSet.Add(localMonitor.Name)
+			monitorsMap[localMonitor.Name] = localMonitor
 		}
-		monitorsSet.Add(monitor.Name)
-		monitorsMap[monitor.Name] = monitor
-		
 	}
 	return monitorsMap, monitorsSet, nil
 }
