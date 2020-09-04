@@ -6,6 +6,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/fatih/color v1.9.0
 	github.com/hashicorp/go-retryablehttp v0.6.7
+	github.com/kennygrant/sanitize v1.2.4
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sergi/go-diff v1.1.0
