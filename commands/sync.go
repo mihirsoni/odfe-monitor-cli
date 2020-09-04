@@ -62,7 +62,7 @@ func runSync(cmd *cobra.Command, args []string) {
 	}
 }
 
-func writeDestinations(destinations map[string]string) {
+func writeDestinations(destinations map[string]destination.Destination) {
 	destinationsPath := filepath.Join(rootDir, destination.FileName)
 	file, err := os.OpenFile(destinationsPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	check(err)
