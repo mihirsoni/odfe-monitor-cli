@@ -22,12 +22,12 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/mihirsoni/odfe-monitor-cli/es"
-	"github.com/mihirsoni/odfe-monitor-cli/destination"
+	"github.com/mihirsoni/odfe-monitor-cli/utils"
 	"github.com/pkg/errors"
 )
 
 // GetAllRemote will pull all the monitors from ES cluster
-func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Destination) (map[string]Monitor, mapset.Set, error) {
+func GetAllRemote(esClient es.Client, destinationsMap map[string]string) (map[string]Monitor, mapset.Set, error) {
 	// Since this is very simple call to match all maximum monitors which is 1000 for now
 	byt := []byte(`{"size": 1000, "query":{ "match_all": {}}}`)
 	resp, err := esClient.MakeRequest(http.MethodPost,
@@ -40,7 +40,7 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Des
 	allRemoteMonitorsMap := make(map[string]Monitor)
 	remoteMonitorsSet := mapset.NewSet()
 	// Reversed map for destinations
-	flippedDestinations := mapIDAsKey(destinationsMap)
+	flippedDestinations := utils.ReverseMap(destinationsMap)
 	if resp.Status == 404 {
 		// No monitors exists so no index exists, returning empty and will create new monitors
 		return allRemoteMonitorsMap, remoteMonitorsSet, nil
@@ -63,7 +63,7 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Des
 			monitor.Triggers[index].YCondition = monitor.Triggers[index].Condition.Script.Source
 			for k := range monitor.Triggers[index].Actions {
 				destinationID := monitor.Triggers[index].Actions[k].DestinationID
-				destintionName := flippedDestinations[destinationID].Name
+				destintionName := flippedDestinations[destinationID]
 				if destintionName == "" {
 					return nil, nil, errors.New("Invalid destination" + destinationID + " in monitor " +
 						monitor.Name + ".If out of sync update using odfe-monitor-cli sync --destination or update")
@@ -82,7 +82,7 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Des
 // Prepare will modify the monitor to populate correct IDs
 func (monitor *Monitor) Prepare(
 	remoteMonitor Monitor,
-	destinationsMap map[string]destination.Destination,
+	destinationsMap map[string]string,
 	isUpdate bool,
 	odVersion int) error {
 
@@ -123,7 +123,7 @@ func (monitor *Monitor) Prepare(
 		for k := range monitor.Triggers[index].Actions {
 			currentAction := monitor.Triggers[index].Actions[k]
 			currentAction.ID = ""
-			remoteDestinationID := destinationsMap[currentAction.DestinationID].ID
+			remoteDestinationID := destinationsMap[currentAction.DestinationID]
 			if remoteDestinationID == "" {
 				return errors.New("Specified destination " + currentAction.DestinationID +
 					" in monitor " + monitor.Name +
@@ -251,11 +251,3 @@ func (monitor *Monitor) Delete(esClient es.Client) error {
 	}
 	return nil
 }
-
-func mapIDAsKey(m map[string]destination.Destination) map[string]destination.Destination {
-	n := make(map[string]destination.Destination)
-	for _, v := range m {
-		n[v.ID] = v
-	}
-	return n
-} 
