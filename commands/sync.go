@@ -78,6 +78,7 @@ func writeMonitors(monitors map[string]monitor.Monitor) {
 		os.Mkdir(monitorsPath, 0755)
 	}
 	for name := range monitors {
+		print(sanitize.BaseName(name))
 		monitorFile := filepath.Join(monitorsPath, sanitize.BaseName(name) + ".yaml")
 		file, err := os.OpenFile(monitorFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		check(err)
