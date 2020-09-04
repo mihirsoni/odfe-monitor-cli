@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mihirsoni/odfe-monitor-cli/es"
 	"github.com/pkg/errors"
