@@ -78,7 +78,7 @@ func GetRemote(esClient es.Client) (map[string]Destination, error) {
 			}
 			json.Unmarshal(parsedDestination, &destination)
 			destination.ID = hit.(map[string]interface{})["_id"].(string)
-			allRemoteDestinationsMap[strings.ToLower(strings.ReplaceAll(destination.Name, " ", "_"))] = destination
+			allRemoteDestinationsMap[destination.Name] = destination
 		}
 	}
 	return allRemoteDestinationsMap, nil
