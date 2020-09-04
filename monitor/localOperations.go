@@ -22,7 +22,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/pkg/errors"
-	"gopkg.in/mihirsoni/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 //GetAllLocal Parse all local monitors under rootDir
