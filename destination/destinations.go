@@ -16,6 +16,7 @@
 package destination
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -56,7 +57,7 @@ func getCommonHeaders() map[string]string {
 }
 
 // GetRemote This will get all the monitor and write them into destinations.yaml file on the root directory
-func GetRemote(esClient es.Client) (map[string]string, error) {
+func GetRemote(esClient es.Client) (map[string]Destination, error) {
 	// Adding 10k which will not be the case.
 	getAllDestinationQuery := []byte(`{"size": 10000, "query":{ "bool": {"must": { "exists": { "field" : "destination" }}}}}`)
 	resp, err := esClient.MakeRequest(http.MethodPost,
@@ -67,17 +68,19 @@ func GetRemote(esClient es.Client) (map[string]string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to fetch destinations from elasticsearch")
 	}
-	var remoteDestinations = make(map[string]string)
-
+	allRemoteDestinationsMap := make(map[string]Destination)
 	if resp.Status == 200 {
 		for _, hit := range resp.Data["hits"].(map[string]interface{})["hits"].([]interface{}) {
-			// Improve using gJson , if more complex operation required
-			id := hit.(map[string]interface{})["_id"].(string)
-			name := hit.(map[string]interface{})["_source"].(map[string]interface{})["destination"].(map[string]interface{})["name"].(string)
-			name = strings.ToLower(strings.ReplaceAll(name, " ", "_"))
-			remoteDestinations[name] = id
+			var destination Destination
+			parsedDestination, err := json.Marshal(hit.(map[string]interface{})["_source"].(map[string]interface{})["destination"])
+			if err != nil {
+				return nil, errors.Wrap(err, "Invalid remote JSON document")
+			}
+			json.Unmarshal(parsedDestination, &destination)
+			destination.ID = hit.(map[string]interface{})["_id"].(string)
+			allRemoteDestinationsMap[strings.ToLower(strings.ReplaceAll(destination.Name, " ", "_"))] = destination
 		}
 	}
-	return remoteDestinations, nil
+	return allRemoteDestinationsMap, nil
 
 }
