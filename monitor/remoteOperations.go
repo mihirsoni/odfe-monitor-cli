@@ -21,8 +21,8 @@ import (
 	"strconv"
 
 	mapset "github.com/deckarep/golang-set"
-	"github.com/mihirsoni/odfe-monitor-cli/es"
 	"github.com/mihirsoni/odfe-monitor-cli/destination"
+	"github.com/mihirsoni/odfe-monitor-cli/es"
 	"github.com/pkg/errors"
 )
 
@@ -258,4 +258,4 @@ func mapIDAsKey(m map[string]destination.Destination) map[string]destination.Des
 		n[v.ID] = v
 	}
 	return n
-} 
+}
