@@ -13,4 +13,5 @@
 .vscode/
 dist/
 .idea
-
+odfe-monitor-cli
+dist
