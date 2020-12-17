@@ -18,7 +18,7 @@ package commands
 import (
 	"net/url"
 
-	"github.com/mihirsoni/odfe-monitor-cli/monitor"
+	"github.com/autero1/odfe-monitor-cli/monitor"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )

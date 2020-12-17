@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/autero1/odfe-monitor-cli/destination"
+	"github.com/autero1/odfe-monitor-cli/es"
 	mapset "github.com/deckarep/golang-set"
-	"github.com/mihirsoni/odfe-monitor-cli/destination"
-	"github.com/mihirsoni/odfe-monitor-cli/es"
 	"github.com/pkg/errors"
 )
 

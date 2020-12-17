@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mihirsoni/odfe-monitor-cli/es"
+	"github.com/autero1/odfe-monitor-cli/es"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )

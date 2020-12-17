@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mihirsoni/odfe-monitor-cli/es"
+	"github.com/autero1/odfe-monitor-cli/es"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -38,11 +38,15 @@ var password string
 var rootDir string
 var odVersion int
 
+// This is injected during build time with ldflags
+var BuildVersion = "development"
+
 // RootCmd asd
 var rootCmd = &cobra.Command{
-	Use:   "odfe-monitor-cli",
-	Short: "Manage opendistro alerting monitors",
-	Long:  `This application will help you to manage the Opendistro alerting monitors using YAML files.`,
+	Use:     "odfe-monitor-cli",
+	Short:   "Manage opendistro alerting monitors",
+	Long:    `This application will help you to manage the Opendistro alerting monitors using YAML files.`,
+	Version: BuildVersion,
 }
 
 func init() {

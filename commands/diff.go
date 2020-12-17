@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mihirsoni/odfe-monitor-cli/destination"
-	"github.com/mihirsoni/odfe-monitor-cli/monitor"
+	"github.com/autero1/odfe-monitor-cli/destination"
+	"github.com/autero1/odfe-monitor-cli/monitor"
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/fatih/color"

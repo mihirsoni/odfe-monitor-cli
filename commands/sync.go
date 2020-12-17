@@ -20,8 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mihirsoni/odfe-monitor-cli/destination"
-	"github.com/mihirsoni/odfe-monitor-cli/monitor"
+	"github.com/autero1/odfe-monitor-cli/destination"
+	"github.com/autero1/odfe-monitor-cli/monitor"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
