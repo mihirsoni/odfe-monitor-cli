@@ -40,7 +40,7 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Des
 	allRemoteMonitorsMap := make(map[string]Monitor)
 	remoteMonitorsSet := mapset.NewSet()
 	// Reversed map for destinations
-	flippedDestinations := mapIDAsKey(destinationsMap)
+	flippedDestinations, flippedKeys := mapIDAsKey(destinationsMap)
 	if resp.Status == 404 {
 		// No monitors exists so no index exists, returning empty and will create new monitors
 		return allRemoteMonitorsMap, remoteMonitorsSet, nil
@@ -64,13 +64,14 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Des
 			for k := range monitor.Triggers[index].Actions {
 				destinationID := monitor.Triggers[index].Actions[k].DestinationID
 				destintionName := flippedDestinations[destinationID].Name
+				destinationKey := flippedKeys[destinationID]
 				if destintionName == "" {
 					return nil, nil, errors.New("Invalid destination" + destinationID + " in monitor " +
 						monitor.Name + ".If out of sync update using odfe-monitor-cli sync --destination or update")
 				}
 				monitor.Triggers[index].Actions[k].Subject = monitor.Triggers[index].Actions[k].SubjectTemplate.Source
 				monitor.Triggers[index].Actions[k].Message = monitor.Triggers[index].Actions[k].MessageTemplate.Source
-				monitor.Triggers[index].Actions[k].DestinationID = destintionName
+				monitor.Triggers[index].Actions[k].DestinationID = destinationKey
 			}
 		}
 		remoteMonitorsSet.Add(monitor.Name)
@@ -252,10 +253,12 @@ func (monitor *Monitor) Delete(esClient es.Client) error {
 	return nil
 }
 
-func mapIDAsKey(m map[string]destination.Destination) map[string]destination.Destination {
+func mapIDAsKey(m map[string]destination.Destination) (map[string]destination.Destination, map[string]string) {
 	n := make(map[string]destination.Destination)
-	for _, v := range m {
+	i := make(map[string]string)
+	for k, v := range m {
 		n[v.ID] = v
+		i[v.ID] = k
 	}
-	return n
+	return n, i
 }
