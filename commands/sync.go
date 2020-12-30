@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kennygrant/sanitize"
 	"github.com/mihirsoni/odfe-monitor-cli/destination"
 	"github.com/mihirsoni/odfe-monitor-cli/monitor"
 	"github.com/spf13/cobra"
@@ -72,15 +73,16 @@ func writeDestinations(destinations map[string]destination.Destination) {
 }
 
 func writeMonitors(monitors map[string]monitor.Monitor) {
-	destinationsPath := filepath.Join(rootDir, "monitors.yaml")
-	file, err := os.OpenFile(destinationsPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	check(err)
-	defer file.Close()
-	var monitorsList []monitor.Monitor
-	for name := range monitors {
-		monitorsList = append(monitorsList, monitors[name])
+	monitorsPath := filepath.Join(rootDir, "monitors/")
+	if _, err := os.Stat(monitorsPath); os.IsNotExist(err) {
+		os.Mkdir(monitorsPath, 0755)
 	}
-	data, err := yaml.Marshal(monitorsList)
-	check(err)
-	file.Write(data)
+	for name := range monitors {
+		monitorFile := filepath.Join(monitorsPath, sanitize.BaseName(name)+".yaml")
+		file, err := os.OpenFile(monitorFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		check(err)
+		data, err := yaml.Marshal(monitors[name])
+		check(err)
+		file.Write(data)
+	}
 }
