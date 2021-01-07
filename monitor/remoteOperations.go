@@ -29,7 +29,7 @@ import (
 // GetAllRemote will pull all the monitors from ES cluster
 func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Destination) (map[string]Monitor, mapset.Set, error) {
 	// Since this is very simple call to match all maximum monitors which is 1000 for now
-	byt := []byte(`{"size": 1000, "query":{ "match_all": {}}}`)
+	byt := []byte(`{"size": 1000, "query":{ "match": { "monitor.type": "monitor" }}}`)
 	resp, err := esClient.MakeRequest(http.MethodPost,
 		"/_opendistro/_alerting/monitors/_search",
 		byt,
