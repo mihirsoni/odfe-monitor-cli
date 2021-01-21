@@ -17,9 +17,9 @@ package commands
 
 import (
 	mapset "github.com/deckarep/golang-set"
-	"github.com/jayschell/odfe-monitor-cli/destination"
-	"github.com/jayschell/odfe-monitor-cli/monitor"
-	"github.com/jayschell/odfe-monitor-cli/utils"
+	"github.com/mihirsoni/odfe-monitor-cli/destination"
+	"github.com/mihirsoni/odfe-monitor-cli/monitor"
+	"github.com/mihirsoni/odfe-monitor-cli/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/cheggaaa/pb.v1"
 

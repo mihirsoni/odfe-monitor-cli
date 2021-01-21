@@ -16,7 +16,7 @@
 package monitor
 
 import (
-	"github.com/jayschell/odfe-monitor-cli/es"
+	"github.com/mihirsoni/odfe-monitor-cli/es"
 )
 
 func getCommonHeaders(esClient es.Client) map[string]string {

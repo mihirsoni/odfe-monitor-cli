@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jayschell/odfe-monitor-cli/es"
+	"github.com/mihirsoni/odfe-monitor-cli/es"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )

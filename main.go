@@ -16,7 +16,7 @@
 package main
 
 import (
-	"github.com/jayschell/odfe-monitor-cli/commands"
+	"github.com/mihirsoni/odfe-monitor-cli/commands"
 )
 
 func main() {
