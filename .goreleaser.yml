@@ -32,5 +32,5 @@ changelog:
     - '^test:'
 release:
   github:
-    owner: jayschell
+    owner: mihirsoni
     name: odfe-monitor-cli

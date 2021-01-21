@@ -16,19 +16,19 @@ Excellent question. So many reasons:
 From source:
 
 ```
-$ go get github.com/jayschell/odfe-monitor-cli/
+$ go get github.com/mihirsoni/odfe-monitor-cli/
 ```
 
 From binary to `./bin/odfe-monitor-cli`:
 
 ```
-$ curl -sfL https://raw.githubusercontent.com/jayschell/odfe-monitor-cli/master/godownloader.sh | bash
+$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-monitor-cli/master/godownloader.sh | bash
 ```
 
 From binary to `/usr/local/bin/odfe-monitor-cli`:
 
 ```
-$ curl -sfL https://raw.githubusercontent.com/jayschell/odfe-monitor-cli/master/godownloader.sh | bash -s -- -b /usr/local/bin
+$ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-monitor-cli/master/godownloader.sh | bash -s -- -b /usr/local/bin
 ```
 
 ## Getting Started
