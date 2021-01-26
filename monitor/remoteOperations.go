@@ -47,7 +47,7 @@ func GetAllRemote(esClient es.Client, destinationsMap map[string]destination.Des
 	}
 	for _, hit := range resp.Data["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		var monitor Monitor
-		parsedMonitor, err := json.Marshal(hit.(map[string]interface{})["_source"])
+		parsedMonitor, err := json.Marshal(hit.(map[string]interface{})["_source"].(map[string]interface{})["monitor"])
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "Invalid remote JSON document")
 		}
