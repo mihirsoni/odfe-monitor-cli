@@ -1,4 +1,8 @@
-# OpenDistro for Elasticsearch Alerting CLI
+# [NOTICE] This repo will no longer maintained, and soon will be deprecated in favor of official [odfe-cli](https://github.com/opendistro-for-elasticsearch/odfe-cli) once Monitoring is onboarded. Tracking [issue](https://github.com/opendistro-for-elasticsearch/odfe-cli/issues/34)
+
+
+
+### OpenDistro for Elasticsearch Alerting CLI
 
 odfe-monitor-cli enables you to manage and organize [Elasticsearch Alerting monitors](https://opendistro.github.io/for-elasticsearch-docs/docs/alerting/) through YAML file.
 
