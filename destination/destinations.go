@@ -30,7 +30,7 @@ import (
 
 //FileName where destinations are stored and read from
 const FileName = "destinations.yaml"
-const indexSearchURL = "/.opendistro-alerting-config/_search"
+const indexSearchURL = "/_opendistro/_alerting/destinations"
 
 //GetLocal Parse local destinations
 func GetLocal(rootDir string) (map[string]string, error) {
@@ -60,7 +60,7 @@ func getCommonHeaders() map[string]string {
 func GetRemote(esClient es.Client) (map[string]Destination, error) {
 	// Adding 10k which will not be the case.
 	getAllDestinationQuery := []byte(`{"size": 10000, "query":{ "bool": {"must": { "exists": { "field" : "destination" }}}}}`)
-	resp, err := esClient.MakeRequest(http.MethodPost,
+	resp, err := esClient.MakeRequest(http.MethodGet,
 		indexSearchURL,
 		getAllDestinationQuery,
 		getCommonHeaders(),
@@ -70,14 +70,14 @@ func GetRemote(esClient es.Client) (map[string]Destination, error) {
 	}
 	allRemoteDestinationsMap := make(map[string]Destination)
 	if resp.Status == 200 {
-		for _, hit := range resp.Data["hits"].(map[string]interface{})["hits"].([]interface{}) {
+		for _, hit := range resp.Data["destinations"].([]interface{}) {
 			var destination Destination
-			parsedDestination, err := json.Marshal(hit.(map[string]interface{})["_source"].(map[string]interface{})["destination"])
+			parsedDestination, err := json.Marshal(hit)
 			if err != nil {
 				return nil, errors.Wrap(err, "Invalid remote JSON document")
 			}
 			json.Unmarshal(parsedDestination, &destination)
-			destination.ID = hit.(map[string]interface{})["_id"].(string)
+			destination.ID = hit.(map[string]interface{})["id"].(string)
 			allRemoteDestinationsMap[strings.ToLower(strings.ReplaceAll(destination.Name, " ", "_"))] = destination
 		}
 	}
