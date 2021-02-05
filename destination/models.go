@@ -7,6 +7,7 @@ type Destination struct {
 	Type          string        `json:"type"`
 	Slack         Slack         `json:"slack,omitempty" yaml:",omitempty"`
 	CustomWebhook CustomWebhook `json:"custom_webhook,omitempty" yaml:",omitempty"`
+        Sns           Sns           `json:"sns,omitempty" yaml:",omitempty"`
 }
 
 // Slack destination object
@@ -25,4 +26,10 @@ type CustomWebhook struct {
 	Host         string            `json:"host,omitempty" yaml:",omitempty"`
 	URL          string            `json:"url,omitempty" yaml:",omitempty"`
 	Username     string            `json:"username,omitempty" yaml:",omitempty"`
+}
+
+// Sns destination object
+type Sns struct {
+        SNSTopicARN  string     `json:"topic_arn,omitempty" yaml:",omitempty"`
+        IAMroleARN   string     `json:"role_arn,omitempty" yaml:",omitempty"`
 }
