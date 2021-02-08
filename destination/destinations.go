@@ -60,7 +60,7 @@ func getCommonHeaders() map[string]string {
 func GetRemote(esClient es.Client) (map[string]Destination, error) {
 	// Adding 10k which will not be the case.
 	getAllDestinationQuery := []byte(`{"size": 10000, "query":{ "bool": {"must": { "exists": { "field" : "destination" }}}}}`)
-	resp, err := esClient.MakeRequest(http.MethodPost,
+	resp, err := esClient.MakeRequest(http.MethodGet,
 		indexSearchURL,
 		getAllDestinationQuery,
 		getCommonHeaders(),
