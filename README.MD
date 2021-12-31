@@ -35,6 +35,14 @@ From binary to `/usr/local/bin/odfe-monitor-cli`:
 $ curl -sfL https://raw.githubusercontent.com/mihirsoni/odfe-monitor-cli/master/godownloader.sh | bash -s -- -b /usr/local/bin
 ```
 
+From Docker:
+```
+$ git clone https://github.com/mihirsoni/odfe-monitor-cli/
+$ cd odfe-monitor-cli
+$ docker build -t odfe-monitor-cli . # Add "--build-arg COMMIT=master" to build a specific version, replace `master` with the desired commit / tag
+$ docker run --rm -u $(id -u):$(id -g) -v $(pwd):/odfe-monitor-cli odfe-monitor-cli sync -u <user> -p <password> -e <host> --monitors
+```
+
 ## Getting Started
 
 
